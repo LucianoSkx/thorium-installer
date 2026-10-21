@@ -195,7 +195,13 @@ else
 	VER="$BETA_VER"
 	[ "$CHANNEL" = "stable" ] && VER="$STABLE_VER"
 
+	# a linha estavel (M138) so tem x86_64/i686: em arm64 cai para a beta
 	ASSET="thorium-browser_${VER}_${VARIANT}.pkg.tar.zst"
+	if [ "$CHANNEL" = "stable" ] && [ "$VARIANT" = "arm64" ]; then
+		VER="$BETA_VER"
+		ASSET="thorium-browser_${VER}_${VARIANT}.pkg.tar.zst"
+	fi
+
 	URL="$(printf '%s\n' "$ASSETS" | awk -v want="$ASSET" '$2 == want {print $1; exit}')"
 	[ -n "$URL" ] || die "a release não tem o pacote $ASSET"
 

@@ -31,6 +31,13 @@ jobs:
             variant: AVX2
           - pkg: thorium-browser-beta-avx512-bin
             variant: AVX512
+          # beta (M156) — outras arquiteturas
+          - pkg: thorium-browser-beta-bin
+            variant: arm64
+            carch: aarch64
+          - pkg: thorium-browser-beta-bin
+            variant: i386
+            carch: i686
           # estável (M138)
           - pkg: thorium-browser-bin
             variant: SSE3
@@ -46,7 +53,7 @@ jobs:
       - name: Build package
         uses: docker://archlinux:base-devel
         with:
-          args: bash /github/workspace/.github/build-package.sh ${{ matrix.pkg }} ${{ matrix.variant }}
+          args: bash /github/workspace/.github/build-package.sh ${{ matrix.pkg }} ${{ matrix.variant }} ${{ matrix.carch }}
 
       - name: Upload package
         uses: actions/upload-artifact@v4

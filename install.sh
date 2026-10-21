@@ -120,7 +120,7 @@ esac
 if [ "$(id -u)" != 0 ]; then
 	command -v sudo >/dev/null 2>&1 || die "sem sudo: rode como root"
 	sudo -k 2>/dev/null || true
-	args=(--system)
+	args=()
 	[ -n "$VERSION" ] && args+=(--version "$VERSION")
 	[ -n "$LOCAL" ] && args+=(--local "$LOCAL")
 	[ "$UNINSTALL" = 1 ] && args+=(--uninstall)

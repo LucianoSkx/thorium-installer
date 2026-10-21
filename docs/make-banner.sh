@@ -24,10 +24,10 @@ magick /tmp/thorium-banner.png /tmp/thorium-icon.png \
 	-gravity west -geometry +115-13 -composite /tmp/thorium-banner.png
 
 magick /tmp/thorium-banner.png \
-	-fill white -font "$FONT_B" -pointsize 104 -gravity northwest \
-	-annotate +352+95 'Thorium' \
-	-fill '#8ab4f8' -font "$FONT_R" -pointsize 32 -gravity northwest \
-	-annotate +358+190 'Chromium faster  ·  instalador para Arch / CachyOS' \
+	-fill white -font "$FONT_B" -pointsize 78 -gravity northwest \
+	-annotate +352+78 'Thorium Browser' \
+	-fill '#8ab4f8' -font "$FONT_R" -pointsize 30 -gravity northwest \
+	-annotate +358+178 'Chromium mais rápido  ·  instalador para Arch / CachyOS' \
 	/tmp/thorium-banner.png
 
 x=358

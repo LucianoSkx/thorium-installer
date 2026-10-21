@@ -22,22 +22,22 @@ jobs:
         include:
           # beta (M156) — variantes de CPU
           - pkg: thorium-browser-beta-bin
-            asset: thorium-browser-beta-sse3
+            variant: SSE3
           - pkg: thorium-browser-beta-sse4-bin
-            asset: thorium-browser-beta-sse4
+            variant: SSE4
           - pkg: thorium-browser-beta-avx-bin
-            asset: thorium-browser-beta-avx
+            variant: AVX
           - pkg: thorium-browser-beta-avx2-bin
-            asset: thorium-browser-beta-avx2
+            variant: AVX2
           - pkg: thorium-browser-beta-avx512-bin
-            asset: thorium-browser-beta-avx512
+            variant: AVX512
           # estável (M138)
           - pkg: thorium-browser-bin
-            asset: thorium-browser-sse3
+            variant: SSE3
           - pkg: thorium-browser-avx-bin
-            asset: thorium-browser-avx
+            variant: AVX
           - pkg: thorium-browser-avx2-bin
-            asset: thorium-browser-avx2
+            variant: AVX2
 
     steps:
       - uses: actions/checkout@v4
@@ -46,19 +46,13 @@ jobs:
       - name: Build package
         uses: docker://archlinux:base-devel
         with:
-          args: bash /github/workspace/.github/build-package.sh ${{ matrix.pkg }}
-
-      - name: Rename artifact
-        run: |
-          rm -f *-debug-*.pkg.tar.zst
-          pkg=$(ls *.pkg.tar.zst | grep -v -- '-debug-')
-          mv "$pkg" "${{ matrix.asset }}.pkg.tar.zst"
+          args: bash /github/workspace/.github/build-package.sh ${{ matrix.pkg }} ${{ matrix.variant }}
 
       - name: Upload package
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.asset }}
-          path: '${{ matrix.asset }}.pkg.tar.zst'
+          name: pkg-${{ matrix.pkg }}
+          path: 'thorium-browser_*.pkg.tar.zst'
           if-no-files-found: error
 
   release:
@@ -83,6 +77,7 @@ jobs:
           tag="${tag#M}"   # upstream usa M156.0.8078.28; aqui e so o numero
           echo "tag=v$tag" >> "$GITHUB_OUTPUT"
           echo "versao detectada: $tag"
+          echo "fonte original: https://github.com/gz83/thorium/releases/tag/M$tag"
 
       - name: Publish release
         env:
@@ -94,7 +89,9 @@ jobs:
           if ! gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
             gh release create "$TAG" --repo "$GITHUB_REPOSITORY" \
               --title "Thorium Browser ${TAG#v}" \
-              --notes "Pacotes Arch gerados a partir do PKGBUILD do AUR."
+              --notes "Pacotes Arch gerados a partir do PKGBUILD do AUR.
+
+          Fonte original: https://github.com/gz83/thorium/releases/tag/M${TAG#v}"
           fi
           # upload sequencial com retry: em paralelo o gh occasionally perde arquivos
           for f in dist/*.pkg.tar.zst; do

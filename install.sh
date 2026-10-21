@@ -9,6 +9,7 @@ set -euo pipefail
 
 REPO="LucianoSkx/thorium-installer"
 RAW_BASE="https://raw.githubusercontent.com/$REPO/main"
+API="https://api.github.com/repos/$REPO/releases"
 
 ORIG_ARGS=("$@")
 VERSION=""
@@ -51,11 +52,11 @@ detect_variant() {
 			' /proc/cpuinfo)
 			has() { grep -qx "$1" <<< "$flags"; }
 			if has avx512f && has avx512cd && has avx512vl && has avx512bw && has avx512dq \
-			   && has avx2 && has fma && has f16c && has avx; then echo "avx512"
-			elif has avx2 && has fma && has f16c && has avx; then echo "avx2"
-			elif has avx; then echo "avx"
-			elif has sse4_1 && has ssse3; then echo "sse4"
-			else echo "sse3"
+			   && has avx2 && has fma && has f16c && has avx; then echo "AVX512"
+			elif has avx2 && has fma && has f16c && has avx; then echo "AVX2"
+			elif has avx; then echo "AVX"
+			elif has sse4_1 && has ssse3; then echo "SSE4"
+			else echo "SSE3"
 			fi
 			;;
 		*) die "arquitetura não suportada: $machine" ;;
@@ -150,23 +151,57 @@ if [ -n "$LOCAL" ]; then
 else
 	VARIANT="$(detect_variant)"
 	info "variante de CPU: $VARIANT"
-	ASSET="thorium-browser-${CHANNEL}-${VARIANT}.pkg.tar.zst"
+
+	if [ -n "$VERSION" ]; then
+		TAG="v${VERSION#v}"
+		API_URL="$API/tags/$TAG"
+	else
+		API_URL="$API/latest"
+	fi
+	info "consultando a release em github.com/$REPO"
+	download "$API_URL" "$TMPD/rel.json"
+	grep -q '"browser_download_url"' "$TMPD/rel.json" || die "falha ao consultar a release"
+
+	# pares "url nome" de todos os assets
+	ASSETS="$(awk '
+		/"name"[ \t]*:/ {
+			n=$0
+			sub(/.*"name"[ \t]*:[ \t]*"/, "", n)
+			sub(/".*/, "", n)
+			name=n
+			next
+		}
+		/"browser_download_url"[ \t]*:/ {
+			u=$0
+			sub(/.*"browser_download_url"[ \t]*:[ \t]*"/, "", u)
+			sub(/".*/, "", u)
+			print u " " name
+		}
+	' "$TMPD/rel.json")"
+
+	# versoes presentes nos assets: a beta e a mais nova, a estavel a mais antiga
+	VERS="$(printf '%s\n' "$ASSETS" | awk '{n=$2; sub(/^thorium-browser_/,"",n); sub(/_[A-Za-z0-9]+\.pkg\.tar\.zst$/,"",n); print n}' | sort -u -V)"
+	TAG_VER="$(awk -F'"' '/"tag_name"[ \t]*:/ {print $4; exit}' "$TMPD/rel.json")"
+	TAG_VER="${TAG_VER#v}"; TAG_VER="${TAG_VER#M}"
+	if printf '%s\n' "$VERS" | grep -qx "$TAG_VER"; then
+		BETA_VER="$TAG_VER"
+		STABLE_VER="$(printf '%s\n' "$VERS" | grep -vx "$BETA_VER" | head -1)"
+	else
+		BETA_VER="$(printf '%s\n' "$VERS" | tail -1)"
+		STABLE_VER="$(printf '%s\n' "$VERS" | head -1)"
+	fi
+	[ -n "$STABLE_VER" ] || STABLE_VER="$BETA_VER"
+
+	VER="$BETA_VER"
+	[ "$CHANNEL" = "stable" ] && VER="$STABLE_VER"
+
+	ASSET="thorium-browser_${VER}_${VARIANT}.pkg.tar.zst"
+	URL="$(printf '%s\n' "$ASSETS" | awk -v want="$ASSET" '$2 == want {print $1; exit}')"
+	[ -n "$URL" ] || die "a release não tem o pacote $ASSET"
 
 	PKG_FILE="$TMPD/$ASSET"
-	if [ -n "$VERSION" ]; then
-		# a tag pode ser M156.0.8078.28 ou v156.0.8078.28: tenta as duas
-		ok=0
-		for tag in "$VERSION" "v${VERSION#v}" "M${VERSION#M}"; do
-			URL="https://github.com/$REPO/releases/download/$tag/$ASSET"
-			info "baixando: $URL"
-			if download "$URL" "$PKG_FILE"; then ok=1; break; fi
-		done
-		[ "$ok" = 1 ] || die "não achei o pacote $ASSET na release $VERSION"
-	else
-		URL="https://github.com/$REPO/releases/latest/download/$ASSET"
-		info "baixando: $URL"
-		download "$URL" "$PKG_FILE" || die "não consegui baixar $ASSET"
-	fi
+	info "baixando: $URL"
+	download "$URL" "$PKG_FILE" || die "não consegui baixar $ASSET"
 fi
 
 info "instalando com: pacman -U"

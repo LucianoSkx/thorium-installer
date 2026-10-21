@@ -58,7 +58,7 @@ jobs:
       - name: Upload package
         uses: actions/upload-artifact@v4
         with:
-          name: pkg-${{ matrix.pkg }}
+          name: pkg-${{ matrix.pkg }}-${{ matrix.variant }}
           path: 'thorium-browser_*.pkg.tar.zst'
           if-no-files-found: error
 

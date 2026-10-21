@@ -57,7 +57,6 @@ curl -fsSL https://raw.githubusercontent.com/LucianoSkx/thorium-installer/main/u
 | Flag | O que faz |
 |---|---|
 | `--version <ver>` | usa uma release específica (ex: `v156.0.8078.28`) |
-| `--stable` | instala a linha estável (138.0.7204.303) em vez da beta (156.0.8078.28) |
 | `--local <pkg>` | instala a partir de um `.pkg.tar.zst` já baixado |
 | `--uninstall` | remove o Thorium |
 | `-h`, `--help` | mostra a ajuda |
@@ -66,19 +65,15 @@ curl -fsSL https://raw.githubusercontent.com/LucianoSkx/thorium-installer/main/u
 
 O instalador escolhe pelo seu processador.
 
-A linha **beta** é a 156.0.8078.28 — a mais recente do
-[gz83/thorium](https://github.com/gz83/thorium/releases). A linha **estável** é a
-138.0.7204.303, do upstream original.
-
-| CPU / arch | asset (beta 156.0.8078.28) | asset (estável 138.0.7204.303) |
-|---|---|---|
-| AVX-512 | `thorium-browser_156.0.8078.28_AVX512.pkg.tar.zst` | — |
-| AVX2 | `thorium-browser_156.0.8078.28_AVX2.pkg.tar.zst` | `thorium-browser_138.0.7204.303_AVX2.pkg.tar.zst` |
-| AVX | `thorium-browser_156.0.8078.28_AVX.pkg.tar.zst` | `thorium-browser_138.0.7204.303_AVX.pkg.tar.zst` |
-| SSE4 | `thorium-browser_156.0.8078.28_SSE4.pkg.tar.zst` | — |
-| SSE3 | `thorium-browser_156.0.8078.28_SSE3.pkg.tar.zst` | `thorium-browser_138.0.7204.303_SSE3.pkg.tar.zst` |
-| arm64 | `thorium-browser_156.0.8078.28_arm64.pkg.tar.zst` | — |
-| i386 | `thorium-browser_156.0.8078.28_i386.pkg.tar.zst` | — |
+| CPU / arch | asset |
+|---|---|
+| AVX-512 | `thorium-browser_156.0.8078.28_AVX512.pkg.tar.zst` |
+| AVX2 | `thorium-browser_156.0.8078.28_AVX2.pkg.tar.zst` |
+| AVX | `thorium-browser_156.0.8078.28_AVX.pkg.tar.zst` |
+| SSE4 | `thorium-browser_156.0.8078.28_SSE4.pkg.tar.zst` |
+| SSE3 | `thorium-browser_156.0.8078.28_SSE3.pkg.tar.zst` |
+| arm64 | `thorium-browser_156.0.8078.28_arm64.pkg.tar.zst` |
+| i386 | `thorium-browser_156.0.8078.28_i386.pkg.tar.zst` |
 
 Os nomes dos assets seguem o padrão do
 [release original](https://github.com/gz83/thorium/releases/tag/M156.0.8078.28)

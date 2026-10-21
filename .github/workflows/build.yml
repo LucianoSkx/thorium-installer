@@ -38,13 +38,6 @@ jobs:
           - pkg: thorium-browser-beta-bin
             variant: i386
             carch: i686
-          # estável (M138)
-          - pkg: thorium-browser-bin
-            variant: SSE3
-          - pkg: thorium-browser-avx-bin
-            variant: AVX
-          - pkg: thorium-browser-avx2-bin
-            variant: AVX2
 
     steps:
       - uses: actions/checkout@v4
@@ -100,14 +93,20 @@ jobs:
 
           Fonte original: https://github.com/gz83/thorium/releases/tag/M${TAG#v}"
           fi
-          # remove assets com nome antigo (thorium-browser-<variante>.pkg.tar.zst)
+          # remove assets obsoletos: nome antigo ou versao diferente da atual
           while read -r asset; do
             [ -n "$asset" ] || continue
             case "$asset" in
-              thorium-browser_*) continue ;;
+              thorium-browser_*) ;;
+              *) echo "removendo asset obsoleto: $asset"
+                 gh release delete-asset "$TAG" --repo "$GITHUB_REPOSITORY" "$asset" -y || true
+                 continue ;;
             esac
-            echo "removendo asset obsoleto: $asset"
-            gh release delete-asset "$TAG" --repo "$GITHUB_REPOSITORY" "$asset" -y || true
+            case "$asset" in
+              thorium-browser_${TAG#v}_*) ;;
+              *) echo "removendo asset de outra versao: $asset"
+                 gh release delete-asset "$TAG" --repo "$GITHUB_REPOSITORY" "$asset" -y || true ;;
+            esac
           done < <(gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json assets -q '.assets[].name')
 
           # upload sequencial com retry: em paralelo o gh occasionally perde arquivos

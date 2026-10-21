@@ -15,7 +15,7 @@ ORIG_ARGS=("$@")
 VERSION=""
 LOCAL=""
 UNINSTALL=0
-CHANNEL="beta"
+
 
 info() { printf '\033[1;32m==>\033[0m %s\n' "$*"; }
 warn() { printf '\033[1;33m==> ATENÇÃO:\033[0m %s\n' "$*" >&2; }
@@ -68,7 +68,6 @@ usage() {
 Uso: $0 [opções]
 
   --version <tag>   usa uma release específica (ex: M156.0.8078.28)
-  --stable          instala a linha estável (138.0.7204.303) em vez da beta (156.0.8078.28)
   --local <pkg>     instala a partir de um .pkg.tar.zst já baixado
   --uninstall       remove o Thorium
   -h, --help        mostra esta ajuda
@@ -81,7 +80,6 @@ EOF
 while [ $# -gt 0 ]; do
 	case "$1" in
 		--version) shift; VERSION="${1:-}" ;;
-		--stable) CHANNEL="stable" ;;
 		--local) shift; LOCAL="${1:-}" ;;
 		--uninstall) UNINSTALL=1 ;;
 		-h|--help) usage ;;
@@ -179,28 +177,10 @@ else
 		}
 	' "$TMPD/rel.json")"
 
-	# versoes presentes nos assets: a beta e a mais nova, a estavel a mais antiga
-	VERS="$(printf '%s\n' "$ASSETS" | awk '{n=$2; sub(/^thorium-browser_/,"",n); sub(/_[A-Za-z0-9]+\.pkg\.tar\.zst$/,"",n); print n}' | sort -u -V)"
-	TAG_VER="$(awk -F'"' '/"tag_name"[ \t]*:/ {print $4; exit}' "$TMPD/rel.json")"
-	TAG_VER="${TAG_VER#v}"; TAG_VER="${TAG_VER#M}"
-	if printf '%s\n' "$VERS" | grep -qx "$TAG_VER"; then
-		BETA_VER="$TAG_VER"
-		STABLE_VER="$(printf '%s\n' "$VERS" | grep -vx "$BETA_VER" | head -1)"
-	else
-		BETA_VER="$(printf '%s\n' "$VERS" | tail -1)"
-		STABLE_VER="$(printf '%s\n' "$VERS" | head -1)"
-	fi
-	[ -n "$STABLE_VER" ] || STABLE_VER="$BETA_VER"
-
-	VER="$BETA_VER"
-	[ "$CHANNEL" = "stable" ] && VER="$STABLE_VER"
-
-	# a linha estavel (M138) so tem x86_64/i686: em arm64 cai para a beta
+	# versao: a da tag da release
+	VER="$(awk -F'"' '/"tag_name"[ \t]*:/ {print $4; exit}' "$TMPD/rel.json")"
+	VER="${VER#v}"; VER="${VER#M}"
 	ASSET="thorium-browser_${VER}_${VARIANT}.pkg.tar.zst"
-	if [ "$CHANNEL" = "stable" ] && [ "$VARIANT" = "arm64" ]; then
-		VER="$BETA_VER"
-		ASSET="thorium-browser_${VER}_${VARIANT}.pkg.tar.zst"
-	fi
 
 	URL="$(printf '%s\n' "$ASSETS" | awk -v want="$ASSET" '$2 == want {print $1; exit}')"
 	[ -n "$URL" ] || die "a release não tem o pacote $ASSET"

@@ -9,7 +9,7 @@
 [![licença](https://img.shields.io/badge/licença-MIT-blue.svg)](LICENSE)
 [![shell](https://img.shields.io/badge/shell-bash-4E89B7.svg)](install.sh)
 [![arch](https://img.shields.io/badge/arch-x86_64%20|%20aarch64-1793D1.svg)]()
-[![release](https://img.shields.io/badge/release-M156%20Beta-1A73E8.svg)](https://github.com/LucianoSkx/thorium-installer/releases)
+[![release](https://img.shields.io/github/v/release/LucianoSkx/thorium-installer?label=release)](https://github.com/LucianoSkx/thorium-installer/releases)
 
 [⬇ Instalar](#instalar) · [🗑 Desinstalar](#desinstalar) · [⚙️ Opções](#opções) · [🏗 Como funciona](#como-funciona)
 
@@ -57,16 +57,20 @@ curl -fsSL https://raw.githubusercontent.com/LucianoSkx/thorium-installer/main/u
 | Flag | O que faz |
 |---|---|
 | `--version <ver>` | usa uma release específica (ex: `v156.0.8078.28`) |
-| `--stable` | instala a linha estável (M138) em vez da beta (M156) |
+| `--stable` | instala a linha estável (138.0.7204.303) em vez da beta (156.0.8078.28) |
 | `--local <pkg>` | instala a partir de um `.pkg.tar.zst` já baixado |
 | `--uninstall` | remove o Thorium |
 | `-h`, `--help` | mostra a ajuda |
 
 ## 📦 Variantes
 
-O instalador escolhe pelo seu processador:
+O instalador escolhe pelo seu processador.
 
-| CPU | pacote beta (M156) | pacote estável (M138) |
+A linha **beta** é a 156.0.8078.28 — a mais recente do
+[gz83/thorium](https://github.com/gz83/thorium/releases). A linha **estável** é a
+138.0.7204.303, do upstream original.
+
+| CPU | beta (156.0.8078.28) | estável (138.0.7204.303) |
 |---|---|---|
 | AVX-512 | `thorium-browser-beta-avx512` | — |
 | AVX2 | `thorium-browser-beta-avx2` | `thorium-browser-avx2` |

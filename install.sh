@@ -67,7 +67,7 @@ usage() {
 Uso: $0 [opções]
 
   --version <ver>   usa uma release específica (ex: v156.0.8078.28)
-  --stable          instala a linha estável (M138) em vez da beta (M156)
+  --stable          instala a linha estável (138.0.7204.303) em vez da beta (156.0.8078.28)
   --local <pkg>     instala a partir de um .pkg.tar.zst já baixado
   --uninstall       remove o Thorium
   -h, --help        mostra esta ajuda
@@ -171,7 +171,7 @@ rm -f "$PKG_FILE" 2>/dev/null || true
 
 cat <<EOF
 
-✔ Thorium Browser instalado.
+✔ Thorium Browser $(pacman -Q 2>/dev/null | grep -E '^thorium-browser' | awk '{print $2}' | head -1 | sed 's/-[0-9]*$//') instalado.
   pacote:  $(pacman -Qq 2>/dev/null | grep -E '^thorium-browser' | tr '\n' ' ')
 
 Execute:        thorium-browser

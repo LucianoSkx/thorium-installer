@@ -43,19 +43,7 @@ jobs:
       - name: Build package
         uses: docker://archlinux:base-devel
         with:
-          args: >
-            bash -euc '
-            pacman -Sy --noconfirm --needed git rpm-tools cpio
-            useradd -m builder
-            mkdir -p /build
-            chown builder /build
-            su builder -c "
-              git clone --depth 1 https://aur.archlinux.org/${{ matrix.pkg }}.git /build/pkg &&
-              cd /build/pkg &&
-              makepkg -f --noconfirm --noprogressbar
-            "
-            cp /build/pkg/*.pkg.tar.zst /github/workspace/
-            '
+          args: bash /github/workspace/.github/build-package.sh ${{ matrix.pkg }}
 
       - name: Rename artifact
         run: mv *.pkg.tar.zst "${{ matrix.asset }}.pkg.tar.zst"

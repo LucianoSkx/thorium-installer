@@ -179,16 +179,22 @@ install_deps() {
 }
 
 uninstall() {
+	# com sudo, $HOME e o do root: os caminhos do usuario real ficam em SUDO_USER
+	local home="$HOME"
+	if [ -n "${SUDO_USER:-}" ]; then
+		local h; h="$(getent passwd "$SUDO_USER" | cut -d: -f6)"
+		[ -n "$h" ] && home="$h"
+	fi
 	info "removendo Thorium"
 	rm -f "$BIN_DIR/$APP_CMD" 2>/dev/null || true
 	rm -f "$DATA_HOME/applications/$DESKTOP_ID" 2>/dev/null || true
-	rm -f "$HOME/.local/share/applications/$DESKTOP_ID" 2>/dev/null || true
+	rm -f "$home/.local/share/applications/$DESKTOP_ID" 2>/dev/null || true
 	rm -rf "$PREFIX_SYSTEM" "$PREFIX_USER" 2>/dev/null || true
 	rm -f /usr/local/bin/thorium-shell 2>/dev/null || true
 	rm -f "$DATA_HOME/icons/hicolor/256x256/apps/$ICON_NAME.png" 2>/dev/null || true
-	rm -f "$HOME/.local/share/icons/hicolor/256x256/apps/$ICON_NAME.png" 2>/dev/null || true
+	rm -f "$home/.local/share/icons/hicolor/256x256/apps/$ICON_NAME.png" 2>/dev/null || true
 	command -v update-desktop-database >/dev/null 2>&1 && update-desktop-database "$DATA_HOME/applications" >/dev/null 2>&1 || true
-	command -v update-desktop-database >/dev/null 2>&1 && update-desktop-database "$HOME/.local/share/applications" >/dev/null 2>&1 || true
+	command -v update-desktop-database >/dev/null 2>&1 && update-desktop-database "$home/.local/share/applications" >/dev/null 2>&1 || true
 	info "Thorium removido (configurações em ~/.config/thorium preservadas)"
 }
 

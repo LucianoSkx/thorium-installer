@@ -209,7 +209,7 @@ mv "$STAGE/opt/chromium.org/thorium" "$PREFIX"
 chmod 755 "$PREFIX/thorium-browser" 2>/dev/null || true
 [ -f "$PREFIX/chrome-sandbox" ] && chmod 4755 "$PREFIX/chrome-sandbox"
 
-for f in "$PREFIX/default-app-block"; do
+for f in "$PREFIX/default-app-block" "$PREFIX/apparmor.d/thorium-browser"; do
 	[ -f "$f" ] && sed -i "s#/opt/chromium.org/thorium/#/opt/thorium-browser/#g" "$f"
 done
 if [ -f "$STAGE/usr/share/gnome-control-center/default-apps/thorium-browser.xml" ]; then
@@ -268,6 +268,9 @@ fi
 if [ -f "$STAGE/usr/bin/thorium-shell" ]; then
 	install -m755 "$STAGE/usr/bin/thorium-shell" "$BIN_DIR/thorium-shell" 2>/dev/null || true
 fi
+if [ -f "$PREFIX/thorium_shell.png" ]; then
+	install -m644 "$PREFIX/thorium_shell.png" "$DATA_HOME/icons/hicolor/256x256/apps/thorium-shell.png"
+fi
 
 # appdata/metainfo (igual ao AUR)
 if [ -f "$STAGE/usr/share/appdata/thorium-browser.appdata.xml" ]; then
@@ -281,7 +284,7 @@ rm -rf "$PREFIX/cron" 2>/dev/null || true
 rm -f /etc/cron.daily/thorium-browser 2>/dev/null || true
 rm -rf "$DATA_HOME/doc/thorium-browser" 2>/dev/null || true
 rm -rf "$DATA_HOME/menu" 2>/dev/null || true
-rm -f "$PREFIX"/product_logo_*.xpm 2>/dev/null || true
+rm -f "$PREFIX"/product_logo_*.png "$PREFIX"/product_logo_*.xpm 2>/dev/null || true
 
 command -v update-desktop-database >/dev/null 2>&1 && update-desktop-database "$DATA_HOME/applications" >/dev/null 2>&1 || true
 

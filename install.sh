@@ -6,6 +6,7 @@ fi
 set -euo pipefail
 
 REPO="gz83/thorium"
+RAW_BASE="https://raw.githubusercontent.com/LucianoSkx/thorium-installer/main"
 APP_CMD="thorium-browser"
 APP_TITLE="Thorium Browser"
 DESKTOP_ID="thorium-browser.desktop"
@@ -13,6 +14,7 @@ ICON_NAME="thorium-browser"
 PREFIX_SYSTEM="/opt/thorium-browser"
 PREFIX_USER="$HOME/.local/opt/thorium-browser"
 
+ORIG_ARGS=("$@")
 VERSION=""
 LOCAL=""
 USER_MODE=0
@@ -112,18 +114,34 @@ TMPD="$(mktemp -d)"
 trap 'rm -rf "$TMPD"' EXIT
 trap 'printf "\n"; info "cancelado"; exit 130' INT TERM
 
+# executado via "curl ... | bash": $0 nao e um arquivo real, entao o script
+# re-executa a si mesmo a partir de um arquivo (o re-exec com sudo exige isso).
+SELF_PATH="$0"
+case "$SELF_PATH" in
+	/*) ;;
+	*) SELF_PATH="$PWD/$SELF_PATH" ;;
+esac
+
+if [ ! -f "$0" ] || [ "${0#/dev/fd/}" != "$0" ]; then
+	info "obtendo o instalador (execucao via pipe)"
+	SELF="$TMPD/install.sh"
+	download "$RAW_BASE/install.sh" "$SELF" || die "nao consegui baixar o instalador"
+	bash "$SELF" ${ORIG_ARGS[@]+"${ORIG_ARGS[@]}"}
+	exit $?
+fi
+
 detect_system
 
 if [ "$MODO_EXPLICITO" = 0 ]; then
 	tty=""
-	[ -n "${CI:-}" ] || tty="$( [ -e /dev/tty ] && echo /dev/tty )"
+	[ -n "${CI:-}" ] || { : > /dev/tty 2>/dev/null && tty=/dev/tty; }
 	if [ -n "$tty" ]; then
 		printf '\nComo quer instalar o Thorium?\n\n' > "$tty"
 		printf '   1)  sistema  \033[1;33m★ recomendado\033[0m  (em /opt, sudo pode pedir senha)\n' > "$tty"
 		printf '   2)  usuário  (em ~/.local, sem senha)\n\n' > "$tty"
 		printf 'Escolha [1-2] (Enter = 1): ' > "$tty"
 		escolha=""
-		read -r escolha < "$tty" || true
+		read -r escolha < "$tty" 2>/dev/null || true
 		case "$escolha" in 2|2.|user|USER) USER_MODE=1 ;; *) USER_MODE=0 ;; esac
 		printf '\n' > "$tty"
 	fi
@@ -141,7 +159,9 @@ else
 		[ -f "$0" ] || die "execute a partir de um arquivo salvo: sudo bash install.sh"
 		command -v sudo >/dev/null 2>&1 || die "sem sudo: use --user"
 		sudo -k 2>/dev/null || true
-		exec sudo -E bash "$0" --system ${VERSION:+--version "$VERSION"} ${LOCAL:+--local "$LOCAL"} ${ASSUME_YES:+-y} ${UNINSTALL:+--uninstall}
+		# sem exec: o script pai limpa o TMPD no EXIT
+		sudo -E bash "$SELF_PATH" --system ${VERSION:+--version "$VERSION"} ${LOCAL:+--local "$LOCAL"} ${ASSUME_YES:+-y} ${UNINSTALL:+--uninstall}
+		exit $?
 	fi
 fi
 

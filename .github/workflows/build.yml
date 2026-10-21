@@ -79,8 +79,21 @@ jobs:
           if ! gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
             gh release create "$TAG" --repo "$GITHUB_REPOSITORY" \
               --title "Thorium Browser $TAG" \
-              --notes "Pacotes Arch gerados a partir do PKGBUILD do AUR." \
-              dist/*.pkg.tar.zst
-          else
-            gh release upload "$TAG" --repo "$GITHUB_REPOSITORY" --clobber dist/*.pkg.tar.zst
+              --notes "Pacotes Arch gerados a partir do PKGBUILD do AUR."
           fi
+          # upload sequencial com retry: em paralelo o gh occasionally perde arquivos
+          for f in dist/*.pkg.tar.zst; do
+            for attempt in 1 2 3; do
+              if gh release upload "$TAG" --repo "$GITHUB_REPOSITORY" --clobber "$f"; then
+                break
+              fi
+              echo "falhou o upload de $f (tentativa $attempt), tentando de novo"
+              sleep 10
+            done
+          done
+          echo "Assets no release:"
+          gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json assets -q '.assets[].name'
+          esperado=$(ls -1 dist/*.pkg.tar.zst | wc -l)
+          publicado=$(gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json assets -q '.assets | length')
+          echo "esperados: $esperado  publicados: $publicado"
+          [ "$esperado" = "$publicado" ]

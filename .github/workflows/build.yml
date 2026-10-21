@@ -14,29 +14,45 @@ on:
         required: false
 
 jobs:
+  # fonte única da versão: release mais recente do upstream (ou input manual)
+  version:
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.ver.outputs.tag }}
+    steps:
+      - name: Resolve upstream version
+        id: ver
+        env:
+          INPUT_TAG: ${{ inputs.tag }}
+        run: |
+          set -euo pipefail
+          if [ -n "$INPUT_TAG" ]; then
+            ver="${INPUT_TAG#v}"; ver="${ver#M}"
+          else
+            ver=$(curl -fsSL https://api.github.com/repos/gz83/thorium/releases/latest \
+              | grep -o '"tag_name": *"[^"]*"' | head -1 | cut -d'"' -f4)
+            ver="${ver#M}"   # upstream usa M156.0.8078.28; aqui e so o numero
+          fi
+          echo "tag=v$ver" >> "$GITHUB_OUTPUT"
+          echo "fonte original: https://github.com/gz83/thorium/releases/tag/M$ver"
+
   build:
+    needs: version
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
         include:
-          # beta (M156) — variantes de CPU
-          - pkg: thorium-browser-beta-bin
-            variant: SSE3
-          - pkg: thorium-browser-beta-sse4-bin
-            variant: SSE4
-          - pkg: thorium-browser-beta-avx-bin
-            variant: AVX
-          - pkg: thorium-browser-beta-avx2-bin
-            variant: AVX2
-          - pkg: thorium-browser-beta-avx512-bin
-            variant: AVX512
-          # beta (M156) — outras arquiteturas
-          - pkg: thorium-browser-beta-bin
-            variant: arm64
+          # variantes de CPU
+          - variant: SSE3
+          - variant: SSE4
+          - variant: AVX
+          - variant: AVX2
+          - variant: AVX512
+          # outras arquiteturas
+          - variant: arm64
             carch: aarch64
-          - pkg: thorium-browser-beta-bin
-            variant: i386
+          - variant: i386
             carch: i686
 
     steps:
@@ -46,17 +62,17 @@ jobs:
       - name: Build package
         uses: docker://archlinux:base-devel
         with:
-          args: bash /github/workspace/.github/build-package.sh ${{ matrix.pkg }} ${{ matrix.variant }} ${{ matrix.carch }}
+          args: bash /github/workspace/.github/build-package.sh ${{ matrix.variant }} ${{ needs.version.outputs.tag }} ${{ matrix.carch }}
 
       - name: Upload package
         uses: actions/upload-artifact@v4
         with:
-          name: pkg-${{ matrix.pkg }}-${{ matrix.variant }}
+          name: pkg-${{ matrix.variant }}
           path: 'thorium-browser_*.pkg.tar.zst'
           if-no-files-found: error
 
   release:
-    needs: build
+    needs: [version, build]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -66,30 +82,26 @@ jobs:
           path: dist
           merge-multiple: true
 
-      # sem tag manual: usa a versao mais recente publicada no upstream
-      - name: Detect latest upstream version
-        id: ver
-        if: ${{ inputs.tag == '' }}
-        run: |
-          set -euo pipefail
-          tag=$(curl -fsSL https://api.github.com/repos/gz83/thorium/releases/latest \
-            | grep -o '"tag_name": *"[^"]*"' | head -1 | cut -d'"' -f4)
-          tag="${tag#M}"   # upstream usa M156.0.8078.28; aqui e so o numero
-          echo "tag=v$tag" >> "$GITHUB_OUTPUT"
-          echo "versao detectada: $tag"
-          echo "fonte original: https://github.com/gz83/thorium/releases/tag/M$tag"
-
       - name: Publish release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAG: ${{ inputs.tag || steps.ver.outputs.tag || github.ref_name }}
+          TAG: ${{ needs.version.outputs.tag }}
         run: |
           set -euo pipefail
           echo "Artefatos:"; ls -1 dist
+          # cinto de segurança: assets têm de ser da versão da tag; mismatch
+          # sinaliza bug no reempacotamento, não espere o cleanup apagar tudo
+          built=$(ls -1 dist/*.pkg.tar.zst | head -1)
+          built="${built#*/thorium-browser_}"; built="${built%.pkg.tar.zst}"
+          built_ver="${built%_*}"
+          if [ "$built_ver" != "${TAG#v}" ]; then
+            echo "assets em $built_ver, mas tag é ${TAG#v}; bug no reempacotamento"
+            exit 1
+          fi
           if ! gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
             gh release create "$TAG" --repo "$GITHUB_REPOSITORY" \
               --title "Thorium Browser ${TAG#v}" \
-              --notes "Pacotes Arch gerados a partir do PKGBUILD do AUR.
+              --notes "Pacotes Arch reempacotados do .deb oficial do upstream.
 
           Fonte original: https://github.com/gz83/thorium/releases/tag/M${TAG#v}"
           fi
@@ -109,8 +121,12 @@ jobs:
             esac
           done < <(gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json assets -q '.assets[].name')
 
+          # checksums para o instalador conferir antes do pacman -U
+          # shortcut: gerados pelo mesmo CI (protegem a transferência, sem assinatura)
+          (cd dist && sha256sum *.pkg.tar.zst > SHA256SUMS)
+
           # upload sequencial com retry: em paralelo o gh occasionally perde arquivos
-          for f in dist/*.pkg.tar.zst; do
+          for f in dist/*.pkg.tar.zst dist/SHA256SUMS; do
             for attempt in 1 2 3; do
               if gh release upload "$TAG" --repo "$GITHUB_REPOSITORY" --clobber "$f"; then
                 break
@@ -121,7 +137,7 @@ jobs:
           done
           echo "Assets no release:"
           gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json assets -q '.assets[].name'
-          esperado=$(ls -1 dist/*.pkg.tar.zst | wc -l)
+          esperado=$(( $(ls -1 dist/*.pkg.tar.zst | wc -l) + 1 ))   # pacotes + SHA256SUMS
           publicado=$(gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json assets -q '.assets | length')
           echo "esperados: $esperado  publicados: $publicado"
           [ "$esperado" = "$publicado" ]

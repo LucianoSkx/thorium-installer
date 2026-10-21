@@ -4,7 +4,7 @@
 
 # Thorium Browser — instalador para Arch / CachyOS
 
-**O pacote oficial do AUR, compilado pelo GitHub Actions e instalado com `pacman -U`.**
+**O `.deb` oficial do upstream (gz83/thorium), reempacotado para Arch no GitHub Actions e instalado com `pacman -U`.**
 
 [![licença](https://img.shields.io/badge/licença-MIT-blue.svg)](LICENSE)
 [![shell](https://img.shields.io/badge/shell-bash-4E89B7.svg)](install.sh)
@@ -19,12 +19,12 @@
 
 ## O que é
 
-O [Thorium](https://github.com/Alex313031/thorium) é um fork do Chromium focado em
+O [Thorium](https://github.com/gz83/thorium) é um fork do Chromium focado em
 performance, com patchsets próprios e **uBlock Origin embutido**.
 
-Este repositório **não reinventa a instalação**: o GitHub Actions clona o PKGBUILD do
-AUR, compila com `makepkg` e publica o `.pkg.tar.zst`. O instalador só baixa o pacote
-e roda `pacman -U` — o resultado é **o mesmo que instalar pelo AUR**.
+Este repositório **não reinventa a instalação**: o GitHub Actions baixa o `.deb`
+oficial do upstream, reempacota para Arch com `makepkg` e publica o
+`.pkg.tar.zst`. O instalador só baixa o pacote e roda `pacman -U`.
 
 ## 📥 Instalar
 
@@ -81,15 +81,18 @@ Os nomes dos assets seguem o padrão do
 
 ## 🔗 Fonte original
 
-Os pacotes vêm do [release M156.0.8078.28 do gz83/thorium](https://github.com/gz83/thorium/releases/tag/M156.0.8078.28),
-reempacotados pelo PKGBUILD do AUR.
+Os pacotes vêm dos releases de [gz83/thorium](https://github.com/gz83/thorium/releases),
+reempacotados com o PKGBUILD próprio deste repositório.
 
 ## 🏗 Como funciona
 
 1. **GitHub Actions** (`.github/workflows/build.yml`) roda em container Arch:
-   clona o PKGBUILD do AUR e compila com `makepkg` → `.pkg.tar.zst`
+   detecta a versão mais recente do upstream (gz83/thorium), gera o PKGBUILD
+   deste repositório apontando para o `.deb` dessa release e reempacota com
+   `makepkg` → `.pkg.tar.zst`
 2. O pacote vai para a [release](https://github.com/LucianoSkx/thorium-installer/releases)
-3. `install.sh` baixa o `.pkg.tar.zst` da variante correta e roda `pacman -U`
+3. `install.sh` baixa o `.pkg.tar.zst` da variante correta, confere o `SHA256SUMS`
+   da release e roda `pacman -U`
 
 O CI roda **todo dia às 6h UTC** e recompila sozinho a versão mais recente do
 upstream. Para forçar uma recompilação agora, basta criar uma tag:
@@ -101,11 +104,11 @@ git tag v156.0.8078.28 && git push origin v156.0.8078.28
 ## 📄 Licença
 
 MIT. O Thorium é um projeto independente — veja
-[github.com/Alex313031/thorium](https://github.com/Alex313031/thorium).
+[github.com/gz83/thorium](https://github.com/gz83/thorium).
 
 ---
 
 <div align="center">
-<sub>Feito para a comunidade Arch · PKGBUILD original do
-<a href="https://aur.archlinux.org/packages?K=thorium-browser">AUR</a></sub>
+<sub>Feito para a comunidade Arch · fonte dos
+<a href="https://github.com/gz83/thorium">`.deb` oficiais upstream</a></sub>
 </div>

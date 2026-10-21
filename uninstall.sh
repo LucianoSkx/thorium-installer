@@ -5,8 +5,23 @@ if [ -z "${BASH_VERSION:-}" ]; then
 fi
 set -euo pipefail
 
+REPO="LucianoSkx/thorium-installer"
+
 info() { printf '\033[1;32m==>\033[0m %s\n' "$*"; }
 warn() { printf '\033[1;33m==> ATENÇÃO:\033[0m %s\n' "$*" >&2; }
+die()  { printf '\033[1;31mErro:\033[0m %s\n' "$*" >&2; exit 1; }
+
+# execução via "curl ... | bash": $0 não é arquivo (re-exec com sudo exige arquivo real)
+if [ ! -f "$0" ] || [ "${0#/dev/fd/}" != "$0" ]; then
+	info "obtendo o script de desinstalação"
+	T="$(mktemp -d)"
+	trap 'rm -rf "$T"' EXIT
+	curl -fsSL --retry 3 --retry-all-errors -o "$T/uninstall.sh" \
+		"https://raw.githubusercontent.com/$REPO/main/uninstall.sh" \
+		|| die "não consegui baixar o script de desinstalação"
+	bash "$T/uninstall.sh"
+	exit $?
+fi
 
 if [ "$(id -u)" != 0 ]; then
 	if command -v sudo >/dev/null 2>&1; then

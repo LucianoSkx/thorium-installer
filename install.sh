@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Instalador do Thorium Browser para Arch Linux / CachyOS.
-# Baixa o .pkg.tar.zst compilado pelo GitHub Actions (a partir do PKGBUILD do
-# AUR) e instala com pacman -U: exatamente como o AUR faria.
+# Baixa o .pkg.tar.zst reempacotado do .deb oficial do upstream (gz83/thorium)
+# pelo GitHub Actions e instala com pacman -U.
 if [ -z "${BASH_VERSION:-}" ]; then
 	exec bash "$0" "$@"
 fi
@@ -31,7 +31,7 @@ download() {
 	fi
 }
 
-# Variante de CPU -> sufixo do pacote (mesmo mapeamento do AUR).
+# Variante de CPU -> sufixo do asset do release do upstream.
 detect_variant() {
 	local machine; machine=$(uname -m)
 	case "$machine" in
@@ -72,7 +72,7 @@ Uso: $0 [opções]
   --uninstall       remove o Thorium
   -h, --help        mostra esta ajuda
 
-Instala o pacote oficial do AUR (compilado no GitHub Actions) com pacman -U.
+Instala o Thorium (reempacotado do .deb oficial upstream) com pacman -U.
 EOF
 	exit "${1:-0}"
 }
@@ -188,13 +188,24 @@ else
 	PKG_FILE="$TMPD/$ASSET"
 	info "baixando: $URL"
 	download "$URL" "$PKG_FILE" || die "não consegui baixar $ASSET"
+
+	# confere o hash publicado na release antes de instalar
+	SUMS_URL="$(printf '%s\n' "$ASSETS" | awk -v want="SHA256SUMS" '$2 == want {print $1; exit}')"
+	if [ -n "$SUMS_URL" ]; then
+		info "conferindo checksum de $ASSET"
+		download "$SUMS_URL" "$TMPD/SHA256SUMS"
+		(cd "$TMPD" && grep -F -- " $ASSET" SHA256SUMS | sha256sum -c --status) \
+			|| die "o checksum de $ASSET não bate"
+	else
+		warn "release sem SHA256SUMS; instalando sem verificação"
+	fi
 fi
 
 info "instalando com: pacman -U"
 pacman -U --noconfirm "$PKG_FILE"
 
-# limpa o lixo
-rm -f "$PKG_FILE" 2>/dev/null || true
+# remove só o download temporário; o arquivo do --local é do usuário
+case "$PKG_FILE" in "$TMPD"/*) rm -f "$PKG_FILE" ;; esac
 
 cat <<EOF
 

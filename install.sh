@@ -66,7 +66,7 @@ usage() {
 	cat <<EOF
 Uso: $0 [opções]
 
-  --version <ver>   usa uma release específica (ex: v156.0.8078.28)
+  --version <tag>   usa uma release específica (ex: M156.0.8078.28)
   --stable          instala a linha estável (138.0.7204.303) em vez da beta (156.0.8078.28)
   --local <pkg>     instala a partir de um .pkg.tar.zst já baixado
   --uninstall       remove o Thorium
@@ -152,15 +152,21 @@ else
 	info "variante de CPU: $VARIANT"
 	ASSET="thorium-browser-${CHANNEL}-${VARIANT}.pkg.tar.zst"
 
+	PKG_FILE="$TMPD/$ASSET"
 	if [ -n "$VERSION" ]; then
-		URL="https://github.com/$REPO/releases/download/v${VERSION#v}/$ASSET"
+		# a tag pode ser M156.0.8078.28 ou v156.0.8078.28: tenta as duas
+		ok=0
+		for tag in "$VERSION" "v${VERSION#v}" "M${VERSION#M}"; do
+			URL="https://github.com/$REPO/releases/download/$tag/$ASSET"
+			info "baixando: $URL"
+			if download "$URL" "$PKG_FILE"; then ok=1; break; fi
+		done
+		[ "$ok" = 1 ] || die "não achei o pacote $ASSET na release $VERSION"
 	else
 		URL="https://github.com/$REPO/releases/latest/download/$ASSET"
+		info "baixando: $URL"
+		download "$URL" "$PKG_FILE" || die "não consegui baixar $ASSET"
 	fi
-
-	PKG_FILE="$TMPD/$ASSET"
-	info "baixando: $URL"
-	download "$URL" "$PKG_FILE"
 fi
 
 info "instalando com: pacman -U"

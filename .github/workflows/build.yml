@@ -4,11 +4,14 @@ on:
   push:
     tags:
       - 'v*'
+  schedule:
+    # todo dia as 6h UTC: recompila a versao mais recente do upstream
+    - cron: '0 6 * * *'
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Tag do release (ex: v156.0.8078.28)'
-        required: true
+        description: 'Tag da release (vazio = detecta a versao mais recente)'
+        required: false
 
 jobs:
   build:
@@ -69,16 +72,28 @@ jobs:
           path: dist
           merge-multiple: true
 
+      # sem tag manual: usa a versao mais recente publicada no upstream
+      - name: Detect latest upstream version
+        id: ver
+        if: ${{ inputs.tag == '' }}
+        run: |
+          set -euo pipefail
+          tag=$(curl -fsSL https://api.github.com/repos/gz83/thorium/releases/latest \
+            | grep -o '"tag_name": *"[^"]*"' | head -1 | cut -d'"' -f4)
+          tag="${tag#M}"   # upstream usa M156.0.8078.28; aqui e so o numero
+          echo "tag=v$tag" >> "$GITHUB_OUTPUT"
+          echo "versao detectada: $tag"
+
       - name: Publish release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAG: ${{ inputs.tag || github.ref_name }}
+          TAG: ${{ inputs.tag || steps.ver.outputs.tag || github.ref_name }}
         run: |
           set -euo pipefail
           echo "Artefatos:"; ls -1 dist
           if ! gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
             gh release create "$TAG" --repo "$GITHUB_REPOSITORY" \
-              --title "Thorium Browser $TAG" \
+              --title "Thorium Browser ${TAG#v}" \
               --notes "Pacotes Arch gerados a partir do PKGBUILD do AUR."
           fi
           # upload sequencial com retry: em paralelo o gh occasionally perde arquivos

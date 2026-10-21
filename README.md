@@ -37,7 +37,7 @@ ficam idênticos.
 - 📦 **Layout idêntico ao AUR** — mesmos caminhos, metainfo, check de CPU e flags.
 - 🧹 **Limpeza automática** — remove cron, docs e menus que vêm no `.deb`.
 - 🔐 **Checksum implícito** — o pacote vem do release oficial do upstream.
-- 🧑 **Dois modos** — sistema (`/opt`, com sudo) ou usuário (`~/.local`, sem senha).
+- 🔐 **Só no sistema** — instala em `/opt` com `sudo`, sem complicação.
 - 🧵 **Sem dependência de AUR** — não precisa de helper (`yay`, `paru`).
 
 ## 📥 Instalar
@@ -46,8 +46,11 @@ ficam idênticos.
 curl -fsSL https://raw.githubusercontent.com/LucianoSkx/thorium-installer/main/install.sh | bash
 ```
 
+Instala **no sistema** (`/opt/thorium-browser`) e pede a senha do `sudo` uma vez.
+Depois de instalar, o pacote baixado e os arquivos temporários são apagados.
+
 <details>
-<summary>Instalar a partir de um arquivo salvo (recomendado)</summary>
+<summary>Instalar a partir de um arquivo salvo</summary>
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/LucianoSkx/thorium-installer/main/install.sh -o install.sh
@@ -68,12 +71,9 @@ curl -fsSL https://raw.githubusercontent.com/LucianoSkx/thorium-installer/main/u
 
 | Flag | O que faz |
 |---|---|
-| `--system` | instala no sistema em `/opt/thorium-browser` (padrão) |
-| `--user` | instala só para você em `~/.local/opt/thorium-browser` (sem sudo) |
 | `--version <ver>` | instala uma versão específica (ex: `156.0.8078.28`) |
 | `--local <deb>` | instala a partir de um `.deb` já baixado (offline) |
 | `--uninstall` | remove o Thorium |
-| `-y`, `--yes` | não pergunta confirmação |
 | `-h`, `--help` | mostra a ajuda |
 
 ## 📁 O que é instalado
@@ -87,7 +87,7 @@ curl -fsSL https://raw.githubusercontent.com/LucianoSkx/thorium-installer/main/u
 | `/usr/share/icons/hicolor/256x256/apps/thorium-browser.png` | ícone |
 | `/usr/share/metainfo/org.chromium.Thorium.metainfo.xml` | metadados AppStream |
 
-No modo `--user` os mesmos arquivos vão para `~/.local/…`.
+Todos os caminhos são do sistema (como no AUR).
 
 ## 🧩 Flags extras
 

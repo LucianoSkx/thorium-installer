@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # Instalador do Thorium Browser para Arch Linux / CachyOS (e derivados).
+# Instala sempre no sistema (/opt), pedindo a senha do sudo.
 if [ -z "${BASH_VERSION:-}" ]; then
 	exec bash "$0" "$@"
 fi
@@ -11,30 +12,19 @@ APP_CMD="thorium-browser"
 APP_TITLE="Thorium Browser"
 DESKTOP_ID="thorium-browser.desktop"
 ICON_NAME="thorium-browser"
-PREFIX_SYSTEM="/opt/thorium-browser"
-PREFIX_USER="$HOME/.local/opt/thorium-browser"
+PREFIX="/opt/thorium-browser"
+BIN_DIR="/usr/bin"
+DATA_HOME="/usr/share"
+CHECK_DIR="/usr/lib/thorium-browser"
 
 ORIG_ARGS=("$@")
 VERSION=""
 LOCAL=""
-USER_MODE=0
 UNINSTALL=0
-ASSUME_YES=0
-MODO_EXPLICITO=0
 
 info() { printf '\033[1;32m==>\033[0m %s\n' "$*"; }
 warn() { printf '\033[1;33m==> ATENÇÃO:\033[0m %s\n' "$*" >&2; }
 die()  { printf '\033[1;31mErro:\033[0m %s\n' "$*" >&2; exit 1; }
-
-detect_system() {
-	if [ ! -r /etc/os-release ]; then die "sem /etc/os-release"; fi
-	# shellcheck disable=SC1091
-	. /etc/os-release
-	case " ${ID_LIKE:-} ${ID:-} " in
-		*" arch "*|*" cachyos "*) ;;
-		*) die "este instalador é para Arch/CachyOS (detectado: ${PRETTY_NAME:-$ID})" ;;
-	esac
-}
 
 download() {
 	if command -v curl >/dev/null 2>&1; then
@@ -46,6 +36,7 @@ download() {
 	fi
 }
 
+# Auto-detecta a variante de CPU e devolve o sufixo do .deb.
 detect_variant() {
 	local machine; machine=$(uname -m)
 	case "$machine" in
@@ -81,29 +72,22 @@ usage() {
 	cat <<EOF
 Uso: $0 [opções]
 
-  --user            instala só para você, em ~/.local (sem sudo)
-  --system          instala no sistema, em /opt (padrão; pode pedir sudo)
   --version <ver>   instala uma versão específica (ex: 156.0.8078.28)
   --local <deb>     instala a partir de um .deb já baixado
   --uninstall       remove o Thorium
-  -y, --yes         não pergunta confirmação
   -h, --help        mostra esta ajuda
 
-Exemplos:
-  sudo bash install.sh
-  bash install.sh --user
+Instala sempre no sistema (/opt/thorium-browser) e pede a senha do sudo.
 EOF
 	exit "${1:-0}"
 }
 
 while [ $# -gt 0 ]; do
 	case "$1" in
-		--user) USER_MODE=1; MODO_EXPLICITO=1 ;;
-		--system) USER_MODE=0; MODO_EXPLICITO=1 ;;
+		--system) ;;
 		--version) shift; VERSION="${1:-}" ;;
 		--local) shift; LOCAL="${1:-}" ;;
 		--uninstall) UNINSTALL=1 ;;
-		-y|--yes) ASSUME_YES=1 ;;
 		-h|--help) usage ;;
 		*) die "opção desconhecida: $1" ;;
 	esac
@@ -111,10 +95,21 @@ while [ $# -gt 0 ]; do
 done
 
 TMPD="$(mktemp -d)"
-trap 'rm -rf "$TMPD"' EXIT
+cleanup() { rm -rf "$TMPD"; }
+trap cleanup EXIT
 trap 'printf "\n"; info "cancelado"; exit 130' INT TERM
 
-# executado via "curl ... | bash": $0 nao e um arquivo real, entao o script
+detect_system() {
+	if [ ! -r /etc/os-release ]; then die "sem /etc/os-release"; fi
+	# shellcheck disable=SC1091
+	. /etc/os-release
+	case " ${ID_LIKE:-} ${ID:-} " in
+		*" arch "*|*" cachyos "*) ;;
+		*) die "este instalador é para Arch/CachyOS (detectado: ${PRETTY_NAME:-$ID})" ;;
+	esac
+}
+
+# executado via "curl ... | bash": $0 nao e um arquivo, entao o script
 # re-executa a si mesmo a partir de um arquivo (o re-exec com sudo exige isso).
 SELF_PATH="$0"
 case "$SELF_PATH" in
@@ -132,78 +127,36 @@ fi
 
 detect_system
 
-if [ "$MODO_EXPLICITO" = 0 ]; then
-	tty=""
-	[ -n "${CI:-}" ] || { : > /dev/tty 2>/dev/null && tty=/dev/tty; }
-	if [ -n "$tty" ]; then
-		printf '\nComo quer instalar o Thorium?\n\n' > "$tty"
-		printf '   1)  sistema  \033[1;33m★ recomendado\033[0m  (em /opt, sudo pode pedir senha)\n' > "$tty"
-		printf '   2)  usuário  (em ~/.local, sem senha)\n\n' > "$tty"
-		printf 'Escolha [1-2] (Enter = 1): ' > "$tty"
-		escolha=""
-		read -r escolha < "$tty" 2>/dev/null || true
-		case "$escolha" in 2|2.|user|USER) USER_MODE=1 ;; *) USER_MODE=0 ;; esac
-		printf '\n' > "$tty"
-	fi
+# tudo no sistema: pede a senha do sudo uma vez
+if [ "$(id -u)" != 0 ]; then
+	command -v sudo >/dev/null 2>&1 || die "sem sudo: instale como root"
+	sudo -k 2>/dev/null || true
+	args=(--system)
+	[ -n "$VERSION" ] && args+=(--version "$VERSION")
+	[ -n "$LOCAL" ] && args+=(--local "$LOCAL")
+	[ "$UNINSTALL" = 1 ] && args+=(--uninstall)
+	sudo -E bash "$SELF_PATH" "${args[@]}"
+	exit $?
 fi
 
-if [ "$USER_MODE" = 1 ]; then
-	PREFIX="$PREFIX_USER"
-	BIN_DIR="${XDG_BIN_HOME:-$HOME/.local/bin}"
-	DATA_HOME="${XDG_DATA_HOME:-$HOME/.local/share}"
-else
-	PREFIX="$PREFIX_SYSTEM"
-	BIN_DIR="/usr/bin"
-	DATA_HOME="/usr/share"
-	if [ "$(id -u)" != 0 ]; then
-		[ -f "$0" ] || die "execute a partir de um arquivo salvo: sudo bash install.sh"
-		command -v sudo >/dev/null 2>&1 || die "sem sudo: use --user"
-		sudo -k 2>/dev/null || true
-		# sem exec: o script pai limpa o TMPD no EXIT
-		args=(--system)
-		[ -n "$VERSION" ] && args+=(--version "$VERSION")
-		[ -n "$LOCAL" ] && args+=(--local "$LOCAL")
-		[ "$ASSUME_YES" = 1 ] && args+=(-y)
-		[ "$UNINSTALL" = 1 ] && args+=(--uninstall)
-		sudo -E bash "$SELF_PATH" "${args[@]}"
-		exit $?
-	fi
-fi
-
-info "sistema: $(. /etc/os-release; echo "$PRETTY_NAME") · modo: $([ "$USER_MODE" = 1 ] && echo usuário || echo sistema)"
+info "sistema: $(. /etc/os-release; echo "$PRETTY_NAME") · instalação em $PREFIX"
 
 install_deps() {
 	local deps=(alsa-lib at-spi2-core cairo dbus expat glib2 gtk3 hicolor-icon-theme libcups gcc-libs libnotify libx11 libxcb libxcomposite libxdamage libxext libxfixes libxkbcommon libxrandr mesa nspr nss pango systemd-libs ttf-liberation xdg-utils)
-	if [ "$USER_MODE" = 1 ]; then
-		warn "modo usuário: dependências do sistema não serão instaladas automaticamente"
-		warn "se faltar algo, rode: sudo pacman -S --needed ${deps[*]}"
-		return 0
-	fi
 	info "instalando dependências"
 	pacman -S --needed --noconfirm "${deps[@]}" || warn "alguma dependência não pôde ser instalada"
 }
 
 uninstall() {
-	# com sudo, $HOME e o do root: os caminhos do usuario real ficam em SUDO_USER
-	local home="$HOME"
-	if [ -n "${SUDO_USER:-}" ]; then
-		local h; h="$(getent passwd "$SUDO_USER" | cut -d: -f6)"
-		[ -n "$h" ] && home="$h"
-	fi
 	info "removendo Thorium"
 	rm -f "$BIN_DIR/$APP_CMD" 2>/dev/null || true
-	rm -f "$DATA_HOME/applications/$DESKTOP_ID" 2>/dev/null || true
-	rm -f "$home/.local/share/applications/$DESKTOP_ID" 2>/dev/null || true
-	rm -rf "$PREFIX_SYSTEM" "$PREFIX_USER" 2>/dev/null || true
-	rm -rf /usr/lib/thorium-browser "$home/.local/lib/thorium-browser" 2>/dev/null || true
 	rm -f /usr/local/bin/thorium-shell 2>/dev/null || true
-	rm -f "$DATA_HOME/metainfo/org.chromium.Thorium.metainfo.xml" 2>/dev/null || true
-	rm -f "$home/.local/share/metainfo/org.chromium.Thorium.metainfo.xml" 2>/dev/null || true
+	rm -rf "$PREFIX" "$CHECK_DIR" 2>/dev/null || true
+	rm -f "$DATA_HOME/applications/$DESKTOP_ID" 2>/dev/null || true
 	rm -f "$DATA_HOME/icons/hicolor/256x256/apps/$ICON_NAME.png" 2>/dev/null || true
-	rm -f "$home/.local/share/icons/hicolor/256x256/apps/$ICON_NAME.png" 2>/dev/null || true
+	rm -f "$DATA_HOME/metainfo/org.chromium.Thorium.metainfo.xml" 2>/dev/null || true
 	command -v update-desktop-database >/dev/null 2>&1 && update-desktop-database "$DATA_HOME/applications" >/dev/null 2>&1 || true
-	command -v update-desktop-database >/dev/null 2>&1 && update-desktop-database "$home/.local/share/applications" >/dev/null 2>&1 || true
-	info "Thorium removido (configurações em ~/.config/thorium preservadas)"
+	info "Thorium removido (perfil e configurações em ~/.config/thorium preservados)"
 }
 
 if [ "$UNINSTALL" = 1 ]; then
@@ -216,6 +169,7 @@ install_deps
 if [ -n "$LOCAL" ]; then
 	[ -f "$LOCAL" ] || die "arquivo não encontrado: $LOCAL"
 	DEB_FILE="$LOCAL"
+	DEB_OWNED=0
 	base="$(basename "$DEB_FILE")"
 	case "$base" in thorium-browser_*_*.deb) VERSION="${base#thorium-browser_}"; VERSION="${VERSION%.deb}"; VERSION="${VERSION%_*}" ;; esac
 	[ -n "$VERSION" ] || VERSION="local"
@@ -229,10 +183,10 @@ else
 	fi
 	VARIANT="$(detect_variant)"
 	info "variante de CPU: $VARIANT"
-	SUFFIX="$VARIANT"
-	DEB="thorium-browser_${VERSION}_${SUFFIX}.deb"
+	DEB="thorium-browser_${VERSION}_${VARIANT}.deb"
 	URL="https://github.com/$REPO/releases/download/M${VERSION}/$DEB"
 	DEB_FILE="$TMPD/$DEB"
+	DEB_OWNED=1
 	info "baixando: $URL"
 	download "$URL" "$DEB_FILE"
 fi
@@ -262,9 +216,6 @@ if [ -f "$STAGE/usr/share/gnome-control-center/default-apps/thorium-browser.xml"
 	sed -i "s#/opt/chromium.org/thorium/#/opt/thorium-browser/#g" "$STAGE/usr/share/gnome-control-center/default-apps/thorium-browser.xml"
 fi
 
-# check-cpu-support (compatibilidade com o AUR)
-CHECK_DIR="$HOME/.local/lib/thorium-browser"
-if [ "$USER_MODE" = 0 ]; then CHECK_DIR="/usr/lib/thorium-browser"; fi
 mkdir -p "$CHECK_DIR"
 cat > "$CHECK_DIR/check-cpu-support" <<'CS'
 #!/usr/bin/env bash
@@ -285,8 +236,7 @@ if [[ -f \$flags_file ]]; then
 		[[ \$line =~ [^[:space:]] ]] && [[ ! \$line =~ ^[[:space:]]*# ]] && flags+=("\$line")
 	done
 fi
-CHECK="$CHECK_DIR/check-cpu-support"
-[ -x "\$CHECK" ] && "\$CHECK" runtime || true
+[ -x "$CHECK_DIR/check-cpu-support" ] && "$CHECK_DIR/check-cpu-support" runtime || true
 exec "$PREFIX/thorium-browser" "\${flags[@]}" "\$@"
 EOF
 chmod 755 "$BIN_DIR/$APP_CMD"
@@ -295,7 +245,6 @@ mkdir -p "$DATA_HOME/applications"
 if [ -f "$STAGE/usr/share/applications/thorium-browser.desktop" ]; then
 	install -m644 "$STAGE/usr/share/applications/thorium-browser.desktop" "$DATA_HOME/applications/$DESKTOP_ID"
 	sed -i "s#Exec=/usr/bin/thorium-browser#Exec=$BIN_DIR/$APP_CMD#" "$DATA_HOME/applications/$DESKTOP_ID"
-	sed -i "s#Exec=thorium-browser#Exec=$BIN_DIR/$APP_CMD#" "$DATA_HOME/applications/$DESKTOP_ID"
 else
 	cat > "$DATA_HOME/applications/$DESKTOP_ID" <<EOF
 [Desktop Entry]
@@ -306,6 +255,18 @@ Type=Application
 Categories=Network;WebBrowser;
 MimeType=text/html;text/xml;application/xhtml+xml;x-scheme-handler/http;x-scheme-handler/https;
 EOF
+fi
+
+mkdir -p "$DATA_HOME/icons/hicolor/256x256/apps"
+if [ -f "$PREFIX/product_logo_256.png" ]; then
+	install -m644 "$PREFIX/product_logo_256.png" "$DATA_HOME/icons/hicolor/256x256/apps/$ICON_NAME.png"
+fi
+if [ -f "$STAGE/usr/share/icons/hicolor/256x256/apps/thorium-browser.png" ]; then
+	install -m644 "$STAGE/usr/share/icons/hicolor/256x256/apps/thorium-browser.png" "$DATA_HOME/icons/hicolor/256x256/apps/$ICON_NAME.png"
+fi
+
+if [ -f "$STAGE/usr/bin/thorium-shell" ]; then
+	install -m755 "$STAGE/usr/bin/thorium-shell" "$BIN_DIR/thorium-shell" 2>/dev/null || true
 fi
 
 # appdata/metainfo (igual ao AUR)
@@ -322,19 +283,11 @@ rm -rf "$DATA_HOME/doc/thorium-browser" 2>/dev/null || true
 rm -rf "$DATA_HOME/menu" 2>/dev/null || true
 rm -f "$PREFIX"/product_logo_*.xpm 2>/dev/null || true
 
-mkdir -p "$DATA_HOME/icons/hicolor/256x256/apps"
-if [ -f "$PREFIX/product_logo_256.png" ]; then
-	install -m644 "$PREFIX/product_logo_256.png" "$DATA_HOME/icons/hicolor/256x256/apps/$ICON_NAME.png"
-fi
-if [ -f "$STAGE/usr/share/icons/hicolor/256x256/apps/thorium-browser.png" ]; then
-	install -m644 "$STAGE/usr/share/icons/hicolor/256x256/apps/thorium-browser.png" "$DATA_HOME/icons/hicolor/256x256/apps/$ICON_NAME.png"
-fi
-
-if [ -f "$STAGE/usr/bin/thorium-shell" ]; then
-	install -m755 "$STAGE/usr/bin/thorium-shell" "$BIN_DIR/thorium-shell" 2>/dev/null || true
-fi
-
 command -v update-desktop-database >/dev/null 2>&1 && update-desktop-database "$DATA_HOME/applications" >/dev/null 2>&1 || true
+
+# limpa o lixo: .deb baixado, pacote extraido e a propria copia temporaria
+[ "$DEB_OWNED" = 1 ] && rm -f "$DEB_FILE" 2>/dev/null
+rm -rf "$STAGE" "$TMPD/data.tar.xz" 2>/dev/null || true
 
 cat <<EOF
 
@@ -343,13 +296,5 @@ cat <<EOF
   app:      $PREFIX/thorium-browser
 
 Execute:        $APP_CMD
-Remover:        curl -fsSL https://raw.githubusercontent.com/LucianoSkx/thorium-installer/main/uninstall.sh | bash
-            (ou reexecute com --uninstall)
+Remover:        sudo bash install.sh --uninstall
 EOF
-
-if [ "$USER_MODE" = 1 ]; then
-	case ":$PATH:" in
-		*":$BIN_DIR:"*) ;;
-		*) warn "adicione $BIN_DIR ao PATH: echo 'export PATH=\$PATH:$BIN_DIR' >> ~/.bashrc" ;;
-	esac
-fi

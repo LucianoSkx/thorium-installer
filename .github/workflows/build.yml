@@ -75,10 +75,12 @@ jobs:
           TAG: ${{ inputs.tag || github.ref_name }}
         run: |
           set -euo pipefail
-          cd dist
-          echo "Artefatos:"; ls -1
-          gh release create "$TAG" \
-            --title "Thorium Browser $TAG" \
-            --notes "Pacotes Arch gerados a partir do PKGBUILD do AUR." \
-            ./*.pkg.tar.zst || \
-          gh release upload "$TAG" ./*.pkg.tar.zst --clobber
+          echo "Artefatos:"; ls -1 dist
+          if ! gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release create "$TAG" --repo "$GITHUB_REPOSITORY" \
+              --title "Thorium Browser $TAG" \
+              --notes "Pacotes Arch gerados a partir do PKGBUILD do AUR." \
+              dist/*.pkg.tar.zst
+          else
+            gh release upload "$TAG" --repo "$GITHUB_REPOSITORY" --clobber dist/*.pkg.tar.zst
+          fi

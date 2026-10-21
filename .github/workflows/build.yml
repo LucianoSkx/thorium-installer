@@ -46,7 +46,10 @@ jobs:
           args: bash /github/workspace/.github/build-package.sh ${{ matrix.pkg }}
 
       - name: Rename artifact
-        run: mv *.pkg.tar.zst "${{ matrix.asset }}.pkg.tar.zst"
+        run: |
+          rm -f *-debug-*.pkg.tar.zst
+          pkg=$(ls *.pkg.tar.zst | grep -v -- '-debug-')
+          mv "$pkg" "${{ matrix.asset }}.pkg.tar.zst"
 
       - name: Upload package
         uses: actions/upload-artifact@v4

@@ -8,10 +8,10 @@
 
 [![licença](https://img.shields.io/badge/licença-MIT-blue.svg)](LICENSE)
 [![shell](https://img.shields.io/badge/shell-bash-4E89B7.svg)](install.sh)
-[![arch](https://img.shields.io/badge/arch-x86_64%20|%20aarch64-1793D1.svg)]()
+[![arch](https://img.shields.io/badge/arch-x86_64%20|%20aarch64%20|%20i686-1793D1.svg)]()
 [![release](https://img.shields.io/github/v/release/LucianoSkx/thorium-installer?label=release)](https://github.com/LucianoSkx/thorium-installer/releases)
 
-[⬇ Instalar](#instalar) · [🗑 Desinstalar](#desinstalar) · [⚙️ Opções](#opções) · [🏗 Como funciona](#como-funciona)
+[⬇ Instalar](#instalar) · [🗑 Desinstalar](#desinstalar) · [⚙️ Opções](#opções) · [📦 Variantes](#variantes) · [🏗 Como funciona](#como-funciona)
 
 </div>
 
@@ -24,7 +24,7 @@ performance, com patchsets próprios e **uBlock Origin embutido**.
 
 Este repositório **não reinventa a instalação**: o GitHub Actions clona o PKGBUILD do
 AUR, compila com `makepkg` e publica o `.pkg.tar.zst`. O instalador só baixa o pacote
-e roda `pacman -U` — o resultado é **byte a byte o mesmo que instalar pelo AUR**.
+e roda `pacman -U` — o resultado é **o mesmo que instalar pelo AUR**.
 
 ## 📥 Instalar
 
@@ -56,7 +56,7 @@ curl -fsSL https://raw.githubusercontent.com/LucianoSkx/thorium-installer/main/u
 
 | Flag | O que faz |
 |---|---|
-| `--version <ver>` | usa uma release específica (ex: `v156.0.8078.28`) |
+| `--version <ver>` | usa uma release específica (ex: `156.0.8078.28`) |
 | `--local <pkg>` | instala a partir de um `.pkg.tar.zst` já baixado |
 | `--uninstall` | remove o Thorium |
 | `-h`, `--help` | mostra a ajuda |
@@ -65,7 +65,7 @@ curl -fsSL https://raw.githubusercontent.com/LucianoSkx/thorium-installer/main/u
 
 O instalador escolhe pelo seu processador.
 
-| CPU / arch | asset |
+| CPU / arch | asset (a versão muda a cada release) |
 |---|---|
 | AVX-512 | `thorium-browser_156.0.8078.28_AVX512.pkg.tar.zst` |
 | AVX2 | `thorium-browser_156.0.8078.28_AVX2.pkg.tar.zst` |
@@ -91,7 +91,8 @@ reempacotados pelo PKGBUILD do AUR.
 2. O pacote vai para a [release](https://github.com/LucianoSkx/thorium-installer/releases)
 3. `install.sh` baixa o `.pkg.tar.zst` da variante correta e roda `pacman -U`
 
-Para recompilar, basta criar uma tag:
+O CI roda **todo dia às 6h UTC** e recompila sozinho a versão mais recente do
+upstream. Para forçar uma recompilação agora, basta criar uma tag:
 
 ```bash
 git tag v156.0.8078.28 && git push origin v156.0.8078.28

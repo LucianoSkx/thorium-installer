@@ -67,7 +67,7 @@ usage() {
 	cat <<EOF
 Uso: $0 [opções]
 
-  --version <tag>   usa uma release específica (ex: M156.0.8078.28)
+  --version <ver>   usa uma release específica (ex: 156.0.8078.28)
   --local <pkg>     instala a partir de um .pkg.tar.zst já baixado
   --uninstall       remove o Thorium
   -h, --help        mostra esta ajuda

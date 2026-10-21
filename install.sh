@@ -309,7 +309,8 @@ cat <<EOF
   app:      $PREFIX/thorium-browser
 
 Execute:        $APP_CMD
-Remover:        bash $(dirname "$0")/uninstall.sh   (ou reexecute com --uninstall)
+Remover:        curl -fsSL https://raw.githubusercontent.com/LucianoSkx/thorium-installer/main/uninstall.sh | bash
+            (ou reexecute com --uninstall)
 EOF
 
 if [ "$USER_MODE" = 1 ]; then

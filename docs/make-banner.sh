@@ -43,6 +43,6 @@ for label in AVX512 AVX2 AVX SSE4 SSE3; do
 	x=$(( x + w + 18 ))
 done
 
-cp /tmp/thorium-banner.png "$A/banner.png"
+cp /tmp/thorium-banner.png "$A/banner-v2.png"
 rm -f /tmp/thorium-banner.png /tmp/thorium-glow.png /tmp/thorium-icon.png
-echo "$A/banner.png"
+echo "$A/banner-v2.png"

@@ -1,6 +1,6 @@
 <div align="center">
 
-![banner](docs/assets/banner.png)
+![banner](docs/assets/banner-v2.png)
 
 # Thorium Browser — instalador para Arch / CachyOS
 

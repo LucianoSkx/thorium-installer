@@ -160,7 +160,12 @@ else
 		command -v sudo >/dev/null 2>&1 || die "sem sudo: use --user"
 		sudo -k 2>/dev/null || true
 		# sem exec: o script pai limpa o TMPD no EXIT
-		sudo -E bash "$SELF_PATH" --system ${VERSION:+--version "$VERSION"} ${LOCAL:+--local "$LOCAL"} ${ASSUME_YES:+-y} ${UNINSTALL:+--uninstall}
+		args=(--system)
+		[ -n "$VERSION" ] && args+=(--version "$VERSION")
+		[ -n "$LOCAL" ] && args+=(--local "$LOCAL")
+		[ "$ASSUME_YES" = 1 ] && args+=(-y)
+		[ "$UNINSTALL" = 1 ] && args+=(--uninstall)
+		sudo -E bash "$SELF_PATH" "${args[@]}"
 		exit $?
 	fi
 fi

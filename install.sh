@@ -195,7 +195,10 @@ uninstall() {
 	rm -f "$DATA_HOME/applications/$DESKTOP_ID" 2>/dev/null || true
 	rm -f "$home/.local/share/applications/$DESKTOP_ID" 2>/dev/null || true
 	rm -rf "$PREFIX_SYSTEM" "$PREFIX_USER" 2>/dev/null || true
+	rm -rf /usr/lib/thorium-browser "$home/.local/lib/thorium-browser" 2>/dev/null || true
 	rm -f /usr/local/bin/thorium-shell 2>/dev/null || true
+	rm -f "$DATA_HOME/metainfo/org.chromium.Thorium.metainfo.xml" 2>/dev/null || true
+	rm -f "$home/.local/share/metainfo/org.chromium.Thorium.metainfo.xml" 2>/dev/null || true
 	rm -f "$DATA_HOME/icons/hicolor/256x256/apps/$ICON_NAME.png" 2>/dev/null || true
 	rm -f "$home/.local/share/icons/hicolor/256x256/apps/$ICON_NAME.png" 2>/dev/null || true
 	command -v update-desktop-database >/dev/null 2>&1 && update-desktop-database "$DATA_HOME/applications" >/dev/null 2>&1 || true
@@ -283,7 +286,7 @@ if [[ -f \$flags_file ]]; then
 	done
 fi
 CHECK="$CHECK_DIR/check-cpu-support"
-[ -x "$CHECK" ] && "$CHECK" runtime || true
+[ -x "\$CHECK" ] && "\$CHECK" runtime || true
 exec "$PREFIX/thorium-browser" "\${flags[@]}" "\$@"
 EOF
 chmod 755 "$BIN_DIR/$APP_CMD"

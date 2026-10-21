@@ -44,6 +44,8 @@ rm -f /usr/local/bin/thorium-browser /usr/bin/thorium-browser 2>/dev/null || tru
 rm -f /usr/local/bin/thorium-shell 2>/dev/null || true
 rm -rf "$PREFIX_SYSTEM" "$PREFIX_USER" 2>/dev/null || true
 rm -rf /usr/lib/thorium-browser "$HOME/.local/lib/thorium-browser" 2>/dev/null || true
+rm -f /usr/local/bin/thorium-shell 2>/dev/null || true
+rm -f "$HOME/.local/share/metainfo/org.chromium.Thorium.metainfo.xml" 2>/dev/null || true
 rm -f /usr/share/metainfo/org.chromium.Thorium.metainfo.xml 2>/dev/null || true
 rm -f "$HOME/.local/share/metainfo/org.chromium.Thorium.metainfo.xml" 2>/dev/null || true
 rm -f /usr/share/applications/thorium-browser.desktop 2>/dev/null || true

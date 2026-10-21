@@ -4,15 +4,14 @@
 
 # Thorium Browser — instalador para Arch / CachyOS
 
-**Chromium mais rápido, com detecção automática de AVX e instalação nos mesmos
-caminhos do AUR.**
+**O pacote oficial do AUR, compilado pelo GitHub Actions e instalado com `pacman -U`.**
 
 [![licença](https://img.shields.io/badge/licença-MIT-blue.svg)](LICENSE)
 [![shell](https://img.shields.io/badge/shell-bash-4E89B7.svg)](install.sh)
 [![arch](https://img.shields.io/badge/arch-x86_64%20|%20aarch64-1793D1.svg)]()
-[![release](https://img.shields.io/badge/release-M156%20Beta-1A73E8.svg)](https://github.com/gz83/thorium/releases)
+[![release](https://img.shields.io/badge/release-M156%20Beta-1A73E8.svg)](https://github.com/LucianoSkx/thorium-installer/releases)
 
-[⬇ Instalar](#instalar) · [🗑 Desinstalar](#desinstalar) · [⚙️ Opções](#opções) · [📁 O que é instalado](#o-que-é-instalado)
+[⬇ Instalar](#instalar) · [🗑 Desinstalar](#desinstalar) · [⚙️ Opções](#opções) · [🏗 Como funciona](#como-funciona)
 
 </div>
 
@@ -21,24 +20,11 @@ caminhos do AUR.**
 ## O que é
 
 O [Thorium](https://github.com/Alex313031/thorium) é um fork do Chromium focado em
-performance, empacotado com patchsets próprios e **uBlock Origin embutido** (instalação
-offline em perfis novos).
+performance, com patchsets próprios e **uBlock Origin embutido**.
 
-O instalador baixa o pacote oficial da release
-[gz83/thorium](https://github.com/gz83/thorium/releases), escolhe a variante correta
-para o seu processador e instala **nos mesmos diretórios do pacote AUR** — de modo que
-`/opt/thorium-browser`, `/usr/bin/thorium-browser` e `/usr/lib/thorium-browser`
-ficam idênticos.
-
-## ✨ Recursos
-
-- 🧠 **Auto-detect de CPU** — AVX512 / AVX2 / AVX / SSE4 / SSE3, com interseção de
-  flags entre todos os núcleos (não só o primeiro core).
-- 📦 **Layout idêntico ao AUR** — mesmos caminhos, metainfo, check de CPU e flags.
-- 🧹 **Limpeza automática** — remove cron, docs e menus que vêm no `.deb`.
-- 🔐 **Checksum implícito** — o pacote vem do release oficial do upstream.
-- 🔐 **Só no sistema** — instala em `/opt` com `sudo`, sem complicação.
-- 🧵 **Sem dependência de AUR** — não precisa de helper (`yay`, `paru`).
+Este repositório **não reinventa a instalação**: o GitHub Actions clona o PKGBUILD do
+AUR, compila com `makepkg` e publica o `.pkg.tar.zst`. O instalador só baixa o pacote
+e roda `pacman -U` — o resultado é **byte a byte o mesmo que instalar pelo AUR**.
 
 ## 📥 Instalar
 
@@ -46,8 +32,8 @@ ficam idênticos.
 curl -fsSL https://raw.githubusercontent.com/LucianoSkx/thorium-installer/main/install.sh | bash
 ```
 
-Instala **no sistema** (`/opt/thorium-browser`) e pede a senha do `sudo` uma vez.
-Depois de instalar, o pacote baixado e os arquivos temporários são apagados.
+O script detecta a variante de CPU, baixa o pacote certo e instala. Pede a senha do
+`sudo` uma vez.
 
 <details>
 <summary>Instalar a partir de um arquivo salvo</summary>
@@ -64,44 +50,42 @@ sudo bash install.sh
 curl -fsSL https://raw.githubusercontent.com/LucianoSkx/thorium-installer/main/uninstall.sh | bash
 ```
 
-> O desinstalador remove o app, o atalho e os ícones. **Suas configurações e perfil
-> (`~/.config/thorium`, `~/.cache/thorium`) são preservados.**
+> Remove o pacote via `pacman -Rns`. **Seu perfil (`~/.config/thorium`) é preservado.**
 
 ## ⚙️ Opções
 
 | Flag | O que faz |
 |---|---|
-| `--version <ver>` | instala uma versão específica (ex: `156.0.8078.28`) |
-| `--local <deb>` | instala a partir de um `.deb` já baixado (offline) |
+| `--version <ver>` | usa uma release específica (ex: `v156.0.8078.28`) |
+| `--stable` | instala a linha estável (M138) em vez da beta (M156) |
+| `--local <pkg>` | instala a partir de um `.pkg.tar.zst` já baixado |
 | `--uninstall` | remove o Thorium |
 | `-h`, `--help` | mostra a ajuda |
 
-## 📁 O que é instalado
+## 📦 Variantes
 
-| Caminho | Conteúdo |
-|---|---|
-| `/opt/thorium-browser/` | o navegador (binários, bibliotecas, Widevine) |
-| `/usr/bin/thorium-browser` | launcher (lê `~/.config/thorium-flags.conf`) |
-| `/usr/lib/thorium-browser/check-cpu-support` | verificação de compatibilidade da CPU |
-| `/usr/share/applications/thorium-browser.desktop` | atalho do menu |
-| `/usr/share/icons/hicolor/256x256/apps/thorium-browser.png` | ícone |
-| `/usr/share/metainfo/org.chromium.Thorium.metainfo.xml` | metadados AppStream |
+O instalador escolhe pelo seu processador:
 
-Todos os caminhos são do sistema (como no AUR).
+| CPU | pacote beta (M156) | pacote estável (M138) |
+|---|---|---|
+| AVX-512 | `thorium-browser-beta-avx512` | — |
+| AVX2 | `thorium-browser-beta-avx2` | `thorium-browser-avx2` |
+| AVX | `thorium-browser-beta-avx` | `thorium-browser-avx` |
+| SSE4 | `thorium-browser-beta-sse4` | — |
+| SSE3 | `thorium-browser-beta-sse3` | `thorium-browser-sse3` |
 
-## 🧩 Flags extras
+## 🏗 Como funciona
 
-Crie `~/.config/thorium-flags.conf` (uma flag por linha):
+1. **GitHub Actions** (`.github/workflows/build.yml`) roda em container Arch:
+   clona o PKGBUILD do AUR e compila com `makepkg` → `.pkg.tar.zst`
+2. O pacote vai para a [release](https://github.com/LucianoSkx/thorium-installer/releases)
+3. `install.sh` baixa o `.pkg.tar.zst` da variante correta e roda `pacman -U`
 
+Para recompilar, basta criar uma tag:
+
+```bash
+git tag v156.0.8078.28 && git push origin v156.0.8078.28
 ```
---disable-thorium-icons
---enable-features=UseOzonePlatform
-```
-
-## 🧰 Requisitos
-
-- Arch Linux ou derivado (CachyOS, Manjaro, EndeavourOS, Garuda, Artix…)
-- `bash`, `bsdtar`, `curl` (ou `wget`), `pacman`
 
 ## 📄 Licença
 
@@ -111,5 +95,6 @@ MIT. O Thorium é um projeto independente — veja
 ---
 
 <div align="center">
-<sub>Feito para a comunidade Arch · Releases do Chromium por <a href="https://github.com/gz83/thorium/releases">gz83/thorium</a></sub>
+<sub>Feito para a comunidade Arch · PKGBUILD original do
+<a href="https://aur.archlinux.org/packages?K=thorium-browser">AUR</a></sub>
 </div>

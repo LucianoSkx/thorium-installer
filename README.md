@@ -70,13 +70,24 @@ A linha **beta** é a 156.0.8078.28 — a mais recente do
 [gz83/thorium](https://github.com/gz83/thorium/releases). A linha **estável** é a
 138.0.7204.303, do upstream original.
 
-| CPU | beta (156.0.8078.28) | estável (138.0.7204.303) |
+| CPU / arch | asset (beta 156.0.8078.28) | asset (estável 138.0.7204.303) |
 |---|---|---|
-| AVX-512 | `thorium-browser-beta-avx512` | — |
-| AVX2 | `thorium-browser-beta-avx2` | `thorium-browser-avx2` |
-| AVX | `thorium-browser-beta-avx` | `thorium-browser-avx` |
-| SSE4 | `thorium-browser-beta-sse4` | — |
-| SSE3 | `thorium-browser-beta-sse3` | `thorium-browser-sse3` |
+| AVX-512 | `thorium-browser_156.0.8078.28_AVX512.pkg.tar.zst` | — |
+| AVX2 | `thorium-browser_156.0.8078.28_AVX2.pkg.tar.zst` | `thorium-browser_138.0.7204.303_AVX2.pkg.tar.zst` |
+| AVX | `thorium-browser_156.0.8078.28_AVX.pkg.tar.zst` | `thorium-browser_138.0.7204.303_AVX.pkg.tar.zst` |
+| SSE4 | `thorium-browser_156.0.8078.28_SSE4.pkg.tar.zst` | — |
+| SSE3 | `thorium-browser_156.0.8078.28_SSE3.pkg.tar.zst` | `thorium-browser_138.0.7204.303_SSE3.pkg.tar.zst` |
+| arm64 | `thorium-browser_156.0.8078.28_arm64.pkg.tar.zst` | — |
+| i386 | `thorium-browser_156.0.8078.28_i386.pkg.tar.zst` | — |
+
+Os nomes dos assets seguem o padrão do
+[release original](https://github.com/gz83/thorium/releases/tag/M156.0.8078.28)
+(`thorium-browser_<versão>_<variante>`).
+
+## 🔗 Fonte original
+
+Os pacotes vêm do [release M156.0.8078.28 do gz83/thorium](https://github.com/gz83/thorium/releases/tag/M156.0.8078.28),
+reempacotados pelo PKGBUILD do AUR.
 
 ## 🏗 Como funciona
 

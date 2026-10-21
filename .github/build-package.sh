@@ -29,6 +29,16 @@ fi
 su builder -c "
   git clone --depth 1 https://aur.archlinux.org/${PKG}.git /build/pkg
   cd /build/pkg
+  cat >> PKGBUILD <<'PATCH'
+
+# o .deb traz thorium-browser.desktop e org.chromium.Thorium.desktop com
+# conteudo identico: sem isso o menu do sistema mostra 2 icones do Thorium
+eval \"\$(declare -f package | sed '1s/^package/package_orig/')\"
+package() {
+  package_orig
+  rm -f \"\${pkgdir}/usr/share/applications/org.chromium.Thorium.desktop\"
+}
+PATCH
   makepkg -f --noconfirm --noprogressbar --nodeps ${CONF}
 "
 

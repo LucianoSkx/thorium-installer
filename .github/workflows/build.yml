@@ -1,0 +1,93 @@
+name: build
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag do release (ex: v156.0.8078.28)'
+        required: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # beta (M156) — variantes de CPU
+          - pkg: thorium-browser-beta-bin
+            asset: thorium-browser-beta-sse3
+          - pkg: thorium-browser-beta-sse4-bin
+            asset: thorium-browser-beta-sse4
+          - pkg: thorium-browser-beta-avx-bin
+            asset: thorium-browser-beta-avx
+          - pkg: thorium-browser-beta-avx2-bin
+            asset: thorium-browser-beta-avx2
+          - pkg: thorium-browser-beta-avx512-bin
+            asset: thorium-browser-beta-avx512
+          # estável (M138)
+          - pkg: thorium-browser-bin
+            asset: thorium-browser-sse3
+          - pkg: thorium-browser-avx-bin
+            asset: thorium-browser-avx
+          - pkg: thorium-browser-avx2-bin
+            asset: thorium-browser-avx2
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # compila dentro de um container Arch: makepkg exige rodar fora do root
+      - name: Build package
+        uses: docker://archlinux:base-devel
+        with:
+          args: >
+            bash -euc '
+            pacman -Sy --noconfirm --needed git rpm-tools cpio
+            useradd -m builder
+            mkdir -p /build
+            chown builder /build
+            su builder -c "
+              git clone --depth 1 https://aur.archlinux.org/${{ matrix.pkg }}.git /build/pkg &&
+              cd /build/pkg &&
+              makepkg -f --noconfirm --noprogressbar
+            "
+            cp /build/pkg/*.pkg.tar.zst /github/workspace/
+            '
+
+      - name: Rename artifact
+        run: mv *.pkg.tar.zst "${{ matrix.asset }}.pkg.tar.zst"
+
+      - name: Upload package
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.asset }}
+          path: '${{ matrix.asset }}.pkg.tar.zst'
+          if-no-files-found: error
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ inputs.tag || github.ref_name }}
+        run: |
+          set -euo pipefail
+          cd dist
+          echo "Artefatos:"; ls -1
+          gh release create "$TAG" \
+            --title "Thorium Browser $TAG" \
+            --notes "Pacotes Arch gerados a partir do PKGBUILD do AUR." \
+            ./*.pkg.tar.zst || \
+          gh release upload "$TAG" ./*.pkg.tar.zst --clobber

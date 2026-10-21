@@ -25,7 +25,7 @@ su builder -c "
 cd /build/pkg
 pkg=$(ls *.pkg.tar.zst | grep -v -- '-debug-')
 # versao sem o pkgrel (o .PKGINFO traz "156.0.8078.28-1")
-versao=$(awk -F'= ' '/^pkgver/ {print $2; exit}' .SRCINFO)
+versao=$(awk -F'= ' '/^[[:space:]]*pkgver[[:space:]]*=/ {gsub(/[[:space:]]/, "", $2); print $2; exit}' .SRCINFO)
 saida="thorium-browser_${versao}_${VARIANT}.pkg.tar.zst"
 cp "$pkg" "/github/workspace/$saida"
 ls -lh "/github/workspace/$saida"

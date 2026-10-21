@@ -93,6 +93,16 @@ jobs:
 
           Fonte original: https://github.com/gz83/thorium/releases/tag/M${TAG#v}"
           fi
+          # remove assets com nome antigo (thorium-browser-<variante>.pkg.tar.zst)
+          while read -r asset; do
+            [ -n "$asset" ] || continue
+            case "$asset" in
+              thorium-browser_*) continue ;;
+            esac
+            echo "removendo asset obsoleto: $asset"
+            gh release delete-asset "$TAG" --repo "$GITHUB_REPOSITORY" "$asset" -y || true
+          done < <(gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json assets -q '.assets[].name')
+
           # upload sequencial com retry: em paralelo o gh occasionally perde arquivos
           for f in dist/*.pkg.tar.zst; do
             for attempt in 1 2 3; do

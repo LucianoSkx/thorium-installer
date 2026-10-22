@@ -96,12 +96,11 @@ reempacotados com o PKGBUILD próprio deste repositório.
 3. `install.sh` baixa o `.pkg.tar.zst` da variante correta, confere o `SHA256SUMS`
    da release e roda `pacman -U`
 
-O CI roda **todo dia às 6h UTC** e recompila sozinho a versão mais recente do
-upstream. Para forçar uma recompilação agora, basta criar uma tag:
-
-```bash
-git tag v156.0.8078.28 && git push origin v156.0.8078.28
-```
+O CI roda **todo dia às 6h UTC** apenas para checar: compila somente quando o
+upstream ([gz83/thorium](https://github.com/gz83/thorium/releases)) publica uma
+versão mais nova que a última release deste repositório. Para recompilar na
+hora, rode o workflow manualmente (Actions → Build → Run workflow) passando a
+tag da release, ou crie uma tag `v*`.
 
 ## 📄 Licença
 

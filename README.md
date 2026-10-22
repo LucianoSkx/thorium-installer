@@ -67,6 +67,7 @@ Flags de execução: cada linha do `~/.config/thorium-flags.conf` vira uma flag 
 
 - `--ozone-platform-hint=auto` — Thorium nativo no Wayland (não XWayland). Zero regressões.
 - `--force-dark-mode` — escurece o conteúdo dos sites pelo Chromium puro.
+- `--ignore-gpu-blocklist` + `--enable-features=AcceleratedVideoEncoder,VaapiIgnoreDriverChecks` — desbloqueia o encode VA-API (VCE) que o Chromium bloqueia em Linux/AMD: `Video Encode: Hardware accelerated` (H264 até 4096×4096/30fps no RX 580). Decodificação continua de fábrica (H264 + HEVC Main10, sem flags extras).
 
 ## 📦 Variantes
 

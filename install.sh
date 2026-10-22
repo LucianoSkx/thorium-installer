@@ -202,7 +202,10 @@ else
 fi
 
 info "instalando com: pacman -U"
-pacman -U --noconfirm "$PKG_FILE"
+# binário novo entra em conflito com um pacote AUR existente; --noconfirm responde
+# "N" (default) à pergunta de remover o conflito e aborta. --ask 4 responde "sim"
+# automaticamente (ALPM_SCRIPTD conflito=4).
+pacman -U --noconfirm --ask 4 "$PKG_FILE"
 
 # remove só o download temporário; o arquivo do --local é do usuário
 case "$PKG_FILE" in "$TMPD"/*) rm -f "$PKG_FILE" ;; esac

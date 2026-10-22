@@ -61,6 +61,8 @@ curl -fsSL https://raw.githubusercontent.com/LucianoSkx/thorium-installer/main/u
 | `--uninstall` | remove o Thorium |
 | `-h`, `--help` | mostra a ajuda |
 
+Flags de execução: cada linha do `~/.config/thorium-flags.conf` vira uma flag do Chromium (linhas vazias e `#` comentários são ignorados). No primeiro start, uma checagem de CPU avisa (`notify-send`) se o build da CPU não é compatível.
+
 ## 📦 Variantes
 
 O instalador escolhe pelo seu processador.

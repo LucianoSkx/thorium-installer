@@ -67,9 +67,6 @@ Flags de execução: cada linha do `~/.config/thorium-flags.conf` vira uma flag 
 
 - `--ozone-platform-hint=auto` — Thorium nativo no Wayland (não XWayland). Zero regressões.
 - `--force-dark-mode` — escurece o conteúdo dos sites pelo Chromium puro.
-- `--enable-features=ZeroCopyRasterizer` — inerte sem Vulkan/dma-buf (provado via `thorium://gpu`). Inofensiva, mas não faz nada aqui.
-- ⚠️ **Nunca** `--enable-features=Vulkan` com ozone wayland em Radeon Polaris: crash de GPU process (3× SharedImageManager, provado no Helium/Chromium 155 — mesmo hardware).
-- Verificação objetiva após qualquer mudança de flag: `thorium://gpu` → `Rasterization: Hardware accelerated` + `GPU process crash count: 0`.
 
 ## 📦 Variantes
 

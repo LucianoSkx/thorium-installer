@@ -10,7 +10,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Tag da release (vazio = detecta a versao mais recente)'
+        description: 'Tag da release (passe tag para reconstruir sempre; vazio = detecta a ultima do upstream e constroi somente se ainda nao publicada)'
         required: false
 
 jobs:

@@ -65,11 +65,20 @@ Flags de execução: cada linha do `~/.config/thorium-flags.conf` vira uma flag 
 
 ### Dicas de flags (testadas em CachyOS + KDE Wayland + Radeon Polaris)
 
+Cole em `~/.config/thorium-flags.conf` (uma flag por linha):
+
+```bash
+--ozone-platform-hint=auto
+--force-dark-mode
+--ignore-gpu-blocklist
+--enable-features=AcceleratedVideoEncoder,VaapiIgnoreDriverChecks
+```
+
 | Flag | Efeito comprovado |
 |---|---|
 | `--ozone-platform-hint=auto` | Thorium nativo no Wayland (não XWayland), zero regressões |
 | `--force-dark-mode` | Escurece o conteúdo dos sites pelo Chromium puro |
-| `--ignore-gpu-blocklist`<br>＋ `--enable-features=AcceleratedVideoEncoder,VaapiIgnoreDriverChecks` | Libera o encode VA-API/VCE que o Chromium bloqueia em Linux/AMD — `Video Encode: Hardware accelerated` (H264 até 4096×4096/30fps no RX 580). Decode segue de fábrica (H264 + HEVC Main10) |
+| `--ignore-gpu-blocklist` ＋ `AcceleratedVideoEncoder,VaapiIgnoreDriverChecks` | Libera o encode VA-API/VCE que o Chromium bloqueia em Linux/AMD — `Video Encode: Hardware accelerated` (H264 até 4096×4096/30fps no RX 580). Decode segue de fábrica (H264 + HEVC Main10) |
 
 > Confirmação de qualquer mudança: exporte `thorium://gpu` — `Rasterization: Hardware accelerated` + `GPU process crash count: 0`.
 

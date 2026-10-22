@@ -19,25 +19,38 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       tag: ${{ steps.ver.outputs.tag }}
+      changed: ${{ steps.ver.outputs.changed }}
     steps:
       - name: Resolve upstream version
         id: ver
         env:
           INPUT_TAG: ${{ inputs.tag }}
+          REPO: ${{ github.repository }}
         run: |
           set -euo pipefail
           if [ -n "$INPUT_TAG" ]; then
             ver="${INPUT_TAG#v}"; ver="${ver#M}"
+            changed=true   # manual: sempre reconstroi
           else
             ver=$(curl -fsSL https://api.github.com/repos/gz83/thorium/releases/latest \
               | grep -o '"tag_name": *"[^"]*"' | head -1 | cut -d'"' -f4)
             ver="${ver#M}"   # upstream usa M156.0.8078.28; aqui e so o numero
+            # repositorio sem release propia: curl falha => own vazio => changed=true
+            own=$(curl -fsSL "https://api.github.com/repos/$REPO/releases/latest" 2>/dev/null \
+              | grep -o '"tag_name": *"[^"]*"' | head -1 | cut -d'"' -f4 || true)
+            if [ "$own" = "v$ver" ]; then
+              changed=false  # origem igual a ultima publicada: nada a fazer
+            else
+              changed=true
+            fi
           fi
           echo "tag=v$ver" >> "$GITHUB_OUTPUT"
+          echo "changed=$changed" >> "$GITHUB_OUTPUT"
           echo "fonte original: https://github.com/gz83/thorium/releases/tag/M$ver"
 
   build:
     needs: version
+    if: needs.version.outputs.changed == 'true'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -73,6 +86,7 @@ jobs:
 
   release:
     needs: [version, build]
+    if: needs.version.outputs.changed == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: write

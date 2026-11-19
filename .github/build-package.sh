@@ -12,7 +12,9 @@ CARCH_TARGET="${3:-x86_64}"
 DEB_URL="https://github.com/gz83/thorium/releases/download/M${VER_UP}"
 DEB="thorium-browser_${VER_UP}_${VARIANT}.deb"
 
-pacman -Sy --noconfirm --needed libarchive
+# upgrade completo: -Sy sem -u mistura pacotes do container com os repos
+# (repos já trazem openssl 4, quebrando deps libcrypto.so=3 dos pacotes instalados)
+pacman -Syu --noconfirm --needed libarchive
 
 # makepkg não roda como root
 useradd -m builder
